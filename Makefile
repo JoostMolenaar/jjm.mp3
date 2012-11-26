@@ -22,6 +22,9 @@ SITE_PACKAGES = $(ENV)/lib/python2.7/site-packages
 test: runtime-test
 	cd $(ENV) ; bin/python -m $(MAIN)
 
+unittest:
+	cd tests ; ../$(ENV)/bin/python -m unittest discover
+
 run: runtime-live
 	cd $(ENV) ; bin/python -m $(MAIN)
 
@@ -69,7 +72,7 @@ deploy-code:
 	@find $(ENV) -name top_level.txt -path '*$(PIP_NAME)-*' -exec sh -c 'echo $(PIP_NAME) > {}' ';'
 
 undeploy-code:
-	$(ENV)/bin/pip uninstall --yes $(PIP_NAME) $(QUIET) || true
+	$(ENV)/bin/pip uninstall --yes $(PIP_NAME) $(QUIET) 2>&1 1>/dev/null || true
 
 link-code:
 	ln -snf $(shell pwd)/$(subst .,/,$(PIP_NAME)) $(SITE_PACKAGES)/$(subst .,/,$(PIP_NAME))

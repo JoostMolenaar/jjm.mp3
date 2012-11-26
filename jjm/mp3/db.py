@@ -103,8 +103,9 @@ class Track(object):
 
         extra_props['bitrate'] = t.info.bitrate
         extra_props['length'] = t.info.length
-        try:
-            extra_props['year'] = str(t['TDRC'].text[0])
+        try: 
+            if t.has_key('TDRC'): extra_props['year'] = str(t['TDRC'].text[0])
+            if t.has_key('TDRL'): extra_props['year'] = str(t['TDRL'].text[0])
             extra_props['year'] = int(extra_props['year'])
         except:
             extra_props['year'] = None
@@ -185,6 +186,9 @@ class TrackList(object):
 
     def __unicode__(self):
         return u'[{0}]'.format(', '.join(repr(t) for t in self.items))
+
+    def __repr__(self):
+        return '<Tracklist: {0} tracks>'.format(len(self.items))
 
 #
 # Collection
