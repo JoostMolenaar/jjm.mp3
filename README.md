@@ -1,5 +1,7 @@
 
 * model
+    * add unit tests
+    * change track to simpler design (don't store in properties but just an embedded dict)
     * merge collection/library/tracklist
 * xhttp
     * header parsers
