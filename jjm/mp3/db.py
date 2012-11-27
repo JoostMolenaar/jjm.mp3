@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-import os
+import os.path
 import re
 
 from itertools import groupby
@@ -15,13 +15,11 @@ from unidecode import unidecode
 
 import jjm.sh
 
-# TODO: don't use os.chdir
-# TODO: scan for updated/new/missing files
-# TODO: move dependency on core.sh to sh after splitting core.sh to own package
-
 mutagen.id3.pedantic = False
 
 __all__ = [ 'Track', 'TrackList', 'Library' ]
+
+QUIET = False
 
 def _clean_url(name, s="-"):
     name = name.lower()
@@ -44,9 +42,6 @@ def _index_dict(attr_name, list=list):
             setattr(self, attr_idx_name, attr_idx)
         return attr_idx
     return getter
-
-def _tracklist_index_dict(attr_name):
-    return _index_dict(attr_name, list=lambda items: TrackList(items))
 
 #
 # Track
@@ -104,8 +99,10 @@ class Track(object):
         extra_props['bitrate'] = t.info.bitrate
         extra_props['length'] = t.info.length
         try: 
-            if t.has_key('TDRC'): extra_props['year'] = str(t['TDRC'].text[0])
-            if t.has_key('TDRL'): extra_props['year'] = str(t['TDRL'].text[0])
+            if t.has_key('TDRC'): 
+                extra_props['year'] = str(t['TDRC'].text[0])
+            if t.has_key('TDRL'): 
+                extra_props['year'] = str(t['TDRL'].text[0])
             extra_props['year'] = int(extra_props['year'])
         except:
             extra_props['year'] = None
@@ -119,22 +116,18 @@ class Track(object):
             extra_props['image_hash'] = None
             extra_props['image_size'] = None
 
-        # t.info.bitrate
-        # t.info.length
-        # t['APIC:].mime
-        # t['APIC:].data
-        # t['TDRC'].text[0]
-
         return Track(fn, mtime, artist, album, track, title, **extra_props) 
 
     @staticmethod
     def try_from_file(fn, **extra_props):
         try:
             result = Track.from_file(fn, **extra_props)
-            print result
+            if not QUIET:
+                print result
             return result
         except Exception as e:
-            print fn, ':', str(e)
+            if not QUIET:
+                print fn, ':', str(e)
             return None
 
     @staticmethod
@@ -167,6 +160,9 @@ class Track(object):
 # TrackList
 #
 
+def _tracklist_index_dict(attr_name):
+    return _index_dict(attr_name, list=lambda items: TrackList(items))
+
 class TrackList(object):
     fn          = _tracklist_index_dict('fn')
     library     = _tracklist_index_dict('library')
@@ -184,11 +180,8 @@ class TrackList(object):
     def __getitem__(self, i):
         return self.items[i]
 
-    def __unicode__(self):
-        return u'[{0}]'.format(', '.join(repr(t) for t in self.items))
-
     def __repr__(self):
-        return '<Tracklist: {0} tracks>'.format(len(self.items))
+        return '[{0}]'.format(', '.join(repr(t) for t in self.items))
 
 #
 # Collection
@@ -206,21 +199,13 @@ class Collection(TrackList):
         super(Collection, self).__init__(files_generator(self))
 
     def __repr__(self):
-        return '<Collection "{0}">'.format(self.name)
-
-    def find_mp3s(self):
-        return [ os.path.relpath(fn.decode('utf8'), self.path) for fn in jjm.sh.findf('.', '*.mp3') ]
+        return '<Collection "{0}": {1}>'.format(self.name, super(Collection, self).__repr__())
 
     @staticmethod
     def scan(path):
-        curdir = os.getcwd()
-        try:
-            os.chdir(path)
-            files_gen = lambda self: (Track.try_from_file(fn, library=self.name, library_url=self.name_url) 
-                                      for fn in self.find_mp3s()) 
-            return Collection(path, files_gen)
-        finally:
-            os.chdir(curdir)
+        files_gen = lambda self: (Track.try_from_file(fn, library=self.name, library_url=self.name_url) 
+                                  for fn in jjm.sh.findf(self.path, '*.mp3'))
+        return Collection(path, files_gen) 
 
     def obj(self):
         return { 'path': self.path, 'tracks': [ t.obj() for t in self.items ] }
