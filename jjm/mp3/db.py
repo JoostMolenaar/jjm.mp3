@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import hashlib
+import hashlib 
 import json
 import os.path
 import re
@@ -241,7 +241,6 @@ class Library(object):
     def from_obj(obj):
         def collection_gen():
             for fn, collection in obj['items'].items():
-                print fn, collection
                 if os.path.exists(fn):
                     coll_obj = load_json(fn)
                     yield Collection.from_obj(coll_obj)

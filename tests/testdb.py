@@ -142,3 +142,8 @@ class TestLibrary(unittest.TestCase):
                 "data.json": { "name": "data", "path": "data" }
             }
         })
+
+    def test_save(self):
+        library = jjm.mp3.db.Library()
+        library.add("data")
+        library.save("library.json")
