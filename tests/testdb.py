@@ -1,4 +1,5 @@
 import unittest 
+import os.path
 
 import jjm.mp3.db
 
@@ -18,7 +19,7 @@ EXPECTED_OBJ = lambda: {
     "image_type":   u"image/jpeg",
     "image_size":   21992,
     "image_hash":   "cdc3b204ae00663fb57fa0f63c9d55fdd327667bcfd82e1921832b61872d39ed",
-    "mtime":        1353959660
+    "mtime":        int(os.path.getmtime(FILENAME))
 }
 
 class TestTrack(unittest.TestCase):
@@ -98,7 +99,7 @@ class TestCollection(unittest.TestCase):
 
         u = repr(collection)
 
-        self.assertEqual(u, "<Collection \"data\": [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
+        self.assertEqual(u, "<Collection \"data\">")
 
     def test_obj(self):
         collection = jjm.mp3.db.Collection.scan("data")
@@ -108,6 +109,7 @@ class TestCollection(unittest.TestCase):
         self.assertIsNotNone(obj)
 
         self.assertEqual(obj, {
+            'name': "data",
             'path': "data",
             'tracks': [EXPECTED_OBJ()]
         })
@@ -118,7 +120,7 @@ class TestCollection(unittest.TestCase):
             "tracks": [EXPECTED_OBJ()]
         })
         self.assertEqual(repr(collection), 
-            "<Collection \"data\": [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
+            "<Collection \"data\">")
 
 class TestLibrary(unittest.TestCase):
     def setUp(self):
@@ -129,19 +131,19 @@ class TestLibrary(unittest.TestCase):
         library.add("data")
 
         obj = library.obj()
-
-        self.assertEqual(obj, {
-            "items": {
-                "data.json": { "name": "data", "path": "data" }
-            }
-        })
+        
+        self.assertEqual(obj, [
+            { "name": "data",
+              "path": "data",
+              "tracks": [EXPECTED_OBJ()] }
+        ])
 
     def test_from_obj(self):
-        library = jjm.mp3.db.Library.from_obj({
-            "items": {
-                "data.json": { "name": "data", "path": "data" }
-            }
-        })
+        library = jjm.mp3.db.Library.from_obj([
+            { "name": "data",
+              "path": "data",
+              "tracks": [EXPECTED_OBJ()] }
+        ])
 
     def test_save(self):
         library = jjm.mp3.db.Library()

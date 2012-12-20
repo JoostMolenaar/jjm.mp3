@@ -15,11 +15,15 @@ from unidecode import unidecode
 
 import jjm.sh
 
+# A Library contains zero or more Collection objects, which inherit from TrackList,
+# and which contain zero or more Track objects. TrackList allows filtering tracks by certain
+# properties of a track, such as artist and album.
+
 mutagen.id3.pedantic = False
 
 __all__ = [ 'Track', 'TrackList', 'Library' ]
 
-QUIET = False
+QUIET = True
 
 def _clean_url(name, s="-"):
     name = name.lower()
@@ -199,7 +203,7 @@ class Collection(TrackList):
         super(Collection, self).__init__(files_generator(self))
 
     def __repr__(self):
-        return '<Collection "{0}": {1}>'.format(self.name, super(Collection, self).__repr__())
+        return '<Collection "{0}">'.format(self.name)
 
     @staticmethod
     def scan(path):
@@ -208,14 +212,19 @@ class Collection(TrackList):
         return Collection(path, files_gen) 
 
     def obj(self):
-        return { 'path': self.path, 'tracks': [ t.obj() for t in self.items ] }
+        #return { 'path': self.path, 'tracks': [ t.obj() for t in self.items ] }
+        return {
+            'name': self.name,
+            'path': self.path,
+            'tracks': [ item.obj() for item in self.items ]
+        }
 
     @staticmethod
-    def from_obj(obj, **x):
+    def from_obj(obj, **extra_props):
         files_gen = lambda self: (Track.from_obj(track, library=self.name, library_url=self.name_url) 
                                   for track in obj['tracks'])
         result = Collection(obj['path'], files_gen)
-        result.__dict__.update(x)
+        result.__dict__.update(extra_props)
         return result
 
 #
@@ -231,27 +240,29 @@ class Library(object):
         self.items = items or []
 
     def obj(self):
-        return { 
-            'items': { 
-                c.name_url + '.json': { 'name': c.name, 'path': c.path } 
-                for c in self.items } 
-        }
+        #return { 
+        #    'items': { 
+        #        c.name_url + '.json': { 'name': c.name, 'path': c.path } 
+        #        for c in self.items } 
+        #}
+        return [ collection.obj() for collection in self.items ] 
 
     @staticmethod
     def from_obj(obj):
-        def collection_gen():
-            for fn, collection in obj['items'].items():
-                if os.path.exists(fn):
-                    coll_obj = load_json(fn)
-                    yield Collection.from_obj(coll_obj)
-                else:
-                    yield Collection.scan(collection['path'])
-        return Library(list(collection_gen()))
+        #def collection_gen():
+        #    for fn, collection in obj['items'].items():
+        #        if os.path.exists(fn):
+        #            coll_obj = load_json(fn)
+        #            yield Collection.from_obj(coll_obj)
+        #        else:
+        #            yield Collection.scan(collection['path'])
+        #return Library(list(collection_gen()))
+        return Library([ Collection.from_obj(collection) for collection in obj ])
 
     def save(self, fn):
-        for coll in self.items:
-            coll_fn = coll.name_url + '.json'
-            save_json(coll_fn, coll.obj())
+        #for coll in self.items:
+        #    coll_fn = coll.name_url + '.json'
+        #    save_json(coll_fn, coll.obj())
         save_json(fn, self.obj())
 
     @staticmethod
@@ -282,22 +293,18 @@ def save_json(fn, obj):
         f.write('\n')
 
 if __name__ == '__main__':
-    os.chdir('run')
-    L = Library.load('library.json')
-    os.chdir('..')
+    L = Library.load('joost.json')
     for p in [
-        '/home/joost/shared/Music/Dub & Reggae',
-        '/home/joost/shared/Music/Dubstep',
-        '/home/joost/shared/Music/Electronic',
-        '/home/joost/shared/Music/Exotic',
-        '/home/joost/shared/Music/Hip-Hop',
-        '/home/joost/shared/Music/Metal & Punk & Surf',
-        '/home/joost/shared/Music/Trip-Hop & Turntables',
-        '/home/joost/shared/Music/Weird & Pop' ]:
+        '/home/joost/MP3/Dub & Reggae',
+        '/home/joost/MP3/Dubstep',
+        '/home/joost/MP3/Electronic',
+        '/home/joost/MP3/Exotic',
+        '/home/joost/MP3/Hip-Hop',
+        '/home/joost/MP3/Metal & Punk & Surf',
+        '/home/joost/MP3/Trip-Hop & Turntables',
+        '/home/joost/MP3/Weird & Pop' ]:
             if not any(c.path == p for c in L.items):
                 L.add(p)
     print L.items
-    os.chdir('run')
-    L.save('library.json')
-    os.chdir('..')
+    L.save('joost.json')
 
