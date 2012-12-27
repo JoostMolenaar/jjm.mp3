@@ -18,12 +18,11 @@ EXPECTED_OBJ = lambda: {
     "year":         2012,
     "image_type":   u"image/jpeg",
     "image_size":   21992,
-    "image_hash":   "cdc3b204ae00663fb57fa0f63c9d55fdd327667bcfd82e1921832b61872d39ed",
+    "image_hash":   "dedad50a19cd1f56bac1d6a31d0500f4fb4738db",
     "mtime":        int(os.path.getmtime(FILENAME))
 }
 
 class TestTrack(unittest.TestCase):
-
     def assert_properties(self, track):
         self.assertIsNotNone(track)
 
@@ -44,7 +43,7 @@ class TestTrack(unittest.TestCase):
         self.assertEqual(track.year, 2012)
 
         self.assertEqual(track.image_type, 'image/jpeg')
-        self.assertEqual(track.image_hash, 'cdc3b204ae00663fb57fa0f63c9d55fdd327667bcfd82e1921832b61872d39ed')
+        self.assertEqual(track.image_hash, 'dedad50a19cd1f56bac1d6a31d0500f4fb4738db')
         self.assertEqual(track.image_size, 21992)
 
         self.assertEqual(track.collection, 'Foo')
@@ -99,7 +98,7 @@ class TestCollection(unittest.TestCase):
 
         u = repr(collection)
 
-        self.assertEqual(u, "<Collection \"data\">")
+        self.assertEqual(u, "<Collection \"data\" (1)>")
 
     def test_obj(self):
         collection = jjm.mp3.db.Collection.scan("data")
@@ -119,8 +118,25 @@ class TestCollection(unittest.TestCase):
             "path": "data",
             "tracks": [EXPECTED_OBJ()]
         })
-        self.assertEqual(repr(collection), 
-            "<Collection \"data\">")
+        self.assertEqual(repr(collection), "<Collection \"data\" (1)>")
+
+    def test_gets(self):
+        collection = jjm.mp3.db.Collection.from_obj({
+            "path": "data",
+            "tracks": [EXPECTED_OBJ()]
+        })
+
+        silent_artist = collection.get_by_artist("Silent Artist")
+        self.assertEqual(repr(silent_artist), "<TrackList [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
+
+        silent_artist = collection.get_by_artist_url("silent-artist")
+        self.assertEqual(repr(silent_artist), "<TrackList [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
+
+        silent_album = collection.get_by_album("Silent Album")
+        self.assertEqual(repr(silent_artist), "<TrackList [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
+
+        silent_album = collection.get_by_album_url("silent-album")
+        self.assertEqual(repr(silent_artist), "<TrackList [silent-artist/silent-album/42-the-sound-of-silence.mp3]>")
 
 class TestLibrary(unittest.TestCase):
     def setUp(self):
@@ -144,8 +160,28 @@ class TestLibrary(unittest.TestCase):
               "path": "data",
               "tracks": [EXPECTED_OBJ()] }
         ])
+        self.assertEqual(repr(library), "<Library: [<Collection \"data\" (1)>]>")
 
-    def test_save(self):
+    def test_get_by_name(self):
+        library = jjm.mp3.db.Library.from_obj([
+            { "name": "data",
+              "path": "data",
+              "tracks": [EXPECTED_OBJ()] }
+        ])
+
+        data = library.get_by_name("data")
+        self.assertEquals(repr(data), "<Collection \"data\" (1)>")
+
+        data = library.get_by_name_url("data")
+        self.assertEquals(repr(data), "<Collection \"data\" (1)>")
+
+        with self.assertRaises(KeyError):
+            library.get_by_name("Foo")
+
+        with self.assertRaises(KeyError):
+            library.get_by_name_url("foo")
+
+    def test_save_load(self):
         library = jjm.mp3.db.Library()
         library.add("data")
         library.save("library.json")

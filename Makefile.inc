@@ -3,10 +3,10 @@ NAME = mp3
 PIP_NAME = jjm.mp3
 PIP_REQ = requirements.txt
 
-MAIN ?= jjm.mp3.main
+MAIN ?= jjm.mp3.server
 
 PKG_BASE = file:///home/joost/git
-PKG = jjm jjm.core jjm.sh
+PKG = jjm jjm.xhttp jjm.xml jjm.sh
 
 STATIC_DIRS = conf web run
 

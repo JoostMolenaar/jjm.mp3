@@ -34,19 +34,6 @@ def _clean_url(name, s="-"):
     name = re.sub(s + '$', '', name)
     return name
 
-def _index_dict(attr_name, list=list):
-    @property
-    def getter(self):
-        attr_idx_name = attr_name + '_idx'
-        if hasattr(self, attr_idx_name):
-            attr_idx = getattr(self, attr_idx_name)
-        else:
-            attr_idx = groupby(self.items, lambda track: getattr(track, attr_name))
-            attr_idx = { name: list(tracks) for (name, tracks) in attr_idx }
-            setattr(self, attr_idx_name, attr_idx)
-        return attr_idx
-    return getter
-
 #
 # Track
 #
@@ -103,17 +90,15 @@ class Track(object):
         extra_props['bitrate'] = t.info.bitrate
         extra_props['length'] = t.info.length
         try: 
-            if t.has_key('TDRC'): 
-                extra_props['year'] = str(t['TDRC'].text[0])
-            if t.has_key('TDRL'): 
-                extra_props['year'] = str(t['TDRL'].text[0])
+            if t.has_key('TDRC'): extra_props['year'] = str(t['TDRC'].text[0])
+            if t.has_key('TDRL'): extra_props['year'] = str(t['TDRL'].text[0])
             extra_props['year'] = int(extra_props['year'])
         except:
             extra_props['year'] = None
 
         try:
             extra_props['image_type'] = t['APIC:'].mime
-            extra_props['image_hash'] = hashlib.sha256(t['APIC:'].data).hexdigest()
+            extra_props['image_hash'] = hashlib.sha1(t['APIC:'].data).hexdigest()
             extra_props['image_size'] = len(t['APIC:'].data)
         except:
             extra_props['image_type'] = None
@@ -146,36 +131,30 @@ class Track(object):
         return Track(fn, mtime, artist, album, track, title, **obj)
 
     def obj(self):
-        return dict(fn=self.fn 
-            , mtime=self.mtime 
-            , artist=self.artist
-            , album=self.album
-            , track=self.track
-            , title=self.title
-            , bitrate=self.bitrate
-            , length=self.length
-            , year=self.year
-            , image_type=self.image_type
-            , image_hash=self.image_hash
-            , image_size=self.image_size
-            )
+        return {
+            'fn': self.fn,
+            'mtime': self.mtime,
+            'artist': self.artist,
+            'album': self.album,
+            'track': self.track,
+            'title': self.title,
+            'bitrate': self.bitrate,
+            'length': self.length,
+            'year': self.year,
+            'image_type': self.image_type,
+            'image_hash': self.image_hash,
+            'image_size': self.image_size
+        }
+
+    @property
+    def image_data(self):
+        return mutagen.mp3.MP3(os.path.abspath(self.fn))['APIC:'].data
 
 #
 # TrackList
 #
 
-def _tracklist_index_dict(attr_name):
-    return _index_dict(attr_name, list=lambda items: TrackList(items))
-
 class TrackList(object):
-    fn          = _tracklist_index_dict('fn')
-    library     = _tracklist_index_dict('library')
-    library_url = _tracklist_index_dict('library_url')
-    artist      = _tracklist_index_dict('artist')
-    artist_url  = _tracklist_index_dict('artist_url')
-    album       = _tracklist_index_dict('album')
-    album_url   = _tracklist_index_dict('album_url')
-
     def __init__(self, items=None):
         items = [] if items is None else items
         items = [ t for t in items if t ]
@@ -185,7 +164,38 @@ class TrackList(object):
         return self.items[i]
 
     def __repr__(self):
-        return '[{0}]'.format(', '.join(repr(t) for t in self.items))
+        return '<TrackList [{0}]>'.format(', '.join(repr(t) for t in self.items))
+
+    def get_by_artist(self, artist):
+        result = (track for track in self.items if track.artist == artist)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_artist_url(self, artist_url):
+        result = (track for track in self.items if track.artist_url == artist_url)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track))) 
+
+    def get_by_album(self, album):
+        result = (track for track in self.items if track.album == album)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_album_url(self, album_url):
+        result = (track for track in self.items if track.album_url == album_url)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_track_num(self, track_num):
+        for track in self.items:
+            if track.track == track_num:
+                return track
+        raise KeyError(track_num)
+
+    def get_artists(self):
+        return sorted({ (track.artist, track.artist_url) for track in self.items })
+
+    def get_albums(self):
+        return sorted({ (track.album, track.album_url) for track in self.items })
+
+    def get_tracks(self):
+        return sorted({ (track.title, track.title_url) for track in self.items })
 
 #
 # Collection
@@ -203,16 +213,19 @@ class Collection(TrackList):
         super(Collection, self).__init__(files_generator(self))
 
     def __repr__(self):
-        return '<Collection "{0}">'.format(self.name)
+        return '<Collection "{0}" ({1})>'.format(self.name, len(self.items))
+
+    @staticmethod
+    def scan_files(path):
+        return jjm.sh.findf(path, '*.mp3')
 
     @staticmethod
     def scan(path):
         files_gen = lambda self: (Track.try_from_file(fn, library=self.name, library_url=self.name_url) 
-                                  for fn in jjm.sh.findf(self.path, '*.mp3'))
+                                  for fn in Collection.scan_files(path))
         return Collection(path, files_gen) 
 
     def obj(self):
-        #return { 'path': self.path, 'tracks': [ t.obj() for t in self.items ] }
         return {
             'name': self.name,
             'path': self.path,
@@ -227,54 +240,148 @@ class Collection(TrackList):
         result.__dict__.update(extra_props)
         return result
 
+    def update(self):
+        files = { fn: int(os.path.getmtime(fn))
+                  for fn in Collection.scan_files(self.path) }
+
+        remove = [ i for (i, track) in enumerate(self.items)
+                   if (track.fn not in files) 
+                   or (track.mtime != files[track.fn]) ]
+
+        for i in remove[::-1]:
+            del self.items[i]
+                
+        current = { track.fn for track in self.items }
+        add = [ Track.try_from_file(fn) for fn in files if fn not in current ]
+        add = [ track for track in add if track ]
+
+        self.items += add
+        self.items = sorted(self.items, key=lambda t: (t.artist, t.album, t.track))
+
 #
 # Library 
 #
 
 class Library(object):
-    name     = _index_dict('name', list=lambda x: list(x)[0])
-    name_url = _index_dict('name_url', list=lambda x: list(x)[0])
-    path     = _index_dict('path', list=lambda x: list(x)[0])
-
     def __init__(self, items=None):
         self.items = items or []
 
+    def __repr__(self):
+        return "<Library: {0!r}>".format(self.items)
+
     def obj(self):
-        #return { 
-        #    'items': { 
-        #        c.name_url + '.json': { 'name': c.name, 'path': c.path } 
-        #        for c in self.items } 
-        #}
         return [ collection.obj() for collection in self.items ] 
 
     @staticmethod
     def from_obj(obj):
-        #def collection_gen():
-        #    for fn, collection in obj['items'].items():
-        #        if os.path.exists(fn):
-        #            coll_obj = load_json(fn)
-        #            yield Collection.from_obj(coll_obj)
-        #        else:
-        #            yield Collection.scan(collection['path'])
-        #return Library(list(collection_gen()))
         return Library([ Collection.from_obj(collection) for collection in obj ])
 
-    def save(self, fn):
-        #for coll in self.items:
-        #    coll_fn = coll.name_url + '.json'
-        #    save_json(coll_fn, coll.obj())
-        save_json(fn, self.obj())
-
-    @staticmethod
-    def load(fn):
-        if os.path.exists(fn):
-            obj = load_json(fn)
-            return Library.from_obj(obj)
-        else:
-            return Library()
-
     def add(self, path):
-        self.items.append(Collection.scan(path))
+        collection = Collection.scan(path)
+        self.items.append(collection)
+        return collection
+
+    def update(self):
+        for collection in self.items:
+            collection.update()
+
+    def get_by_name(self, name):
+        for collection in self.items:
+            if collection.name == name:
+                return collection
+        raise KeyError(name)
+
+    def get_by_name_url(self, name_url):
+        for collection in self.items:
+            if collection.name_url == name_url:
+                return collection
+        raise KeyError(name_url)
+
+#
+# LocalUser
+#
+
+class LocalUser(object):
+    def __init__(self, name, library):
+        self.name = name
+        self.name_url = _clean_url(name)
+        self.library = library
+
+    def __repr__(self):
+        return "<LocalUser {0} ({1})>".format(self.name, len(self.library.items))
+
+    def obj(self):
+        return {
+            "_type": "LocalUser",
+            "name": self.name,
+            "library": self.library.obj()
+        }
+
+    @classmethod
+    def from_obj(cls, obj):
+        return cls(obj["name"], Library.from_obj(obj["library"]))
+
+#
+# Users
+#
+
+class Users(object):
+    def __init__(self, path):
+        self.path = path
+        self.items = list(self.scan_users())
+
+    def scan_users(self):
+        for fn in jjm.sh.findf(self.path, "*.json"):
+            obj = load_json(fn)
+            if obj["_type"] == "LocalUser":
+                user = LocalUser.from_obj(obj)
+            elif obj["_type"] == "RemoteUser":
+                user = RemoteUser.from_obj(obj)
+            yield user
+
+    def get_by_name(self, name):
+        for user in self.items:
+            if user.name == name:
+                return user
+        raise KeyError(name)
+
+    def get_by_name_url(self, name_url):
+        for user in self.items:
+            if user.name_url == name_url:
+                return user
+        raise KeyError(name_url)
+
+    def save(self):
+        for user in self.items:
+            save_json(os.path.join(self.path, user.name_url + ".json"), user.obj())
+
+    def resolve(self, *args):
+        args = list(args)
+      
+        result = self.get_by_name_url(args.pop(0)) # -> User
+        if not args: return result
+
+        result = result.library.get_by_name_url(args.pop(0)) # -> Collection
+        if not args: return result
+
+        artist_url = args.pop(0)
+        result = result.get_by_artist_url(artist_url) # -> TrackList (artist_url)
+        if not result.items: raise KeyError(artist_url)
+        if not args: return result
+
+        album_url = args.pop(0)
+        result = result.get_by_album_url(album_url) # -> TrackList (album_url)
+        if not result.items: raise KeyError(album_url)
+        if not args: return result
+
+        result = result.get_by_track_num(args.pop(0)) # -> Track
+        if not args: return result
+
+        title_url = args.pop(0)
+        if result.title_url != title_url: raise KeyError(title_url)
+        if not args: return result
+
+        raise Exception("Leftover arguments: {0!r}".format(args)) 
 
 #
 # json helper functions
@@ -291,20 +398,4 @@ def save_json(fn, obj):
     with open(fn, 'w') as f:
         f.write(obj_to_json(obj))
         f.write('\n')
-
-if __name__ == '__main__':
-    L = Library.load('joost.json')
-    for p in [
-        '/home/joost/MP3/Dub & Reggae',
-        '/home/joost/MP3/Dubstep',
-        '/home/joost/MP3/Electronic',
-        '/home/joost/MP3/Exotic',
-        '/home/joost/MP3/Hip-Hop',
-        '/home/joost/MP3/Metal & Punk & Surf',
-        '/home/joost/MP3/Trip-Hop & Turntables',
-        '/home/joost/MP3/Weird & Pop' ]:
-            if not any(c.path == p for c in L.items):
-                L.add(p)
-    print L.items
-    L.save('joost.json')
 

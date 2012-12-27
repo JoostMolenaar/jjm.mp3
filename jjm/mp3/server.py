@@ -4,181 +4,264 @@ import re
 import StringIO
 import zipfile
 
-import webob
-import webob.exc
+from jjm import xhttp 
+from jjm import sh
 
-import mutagen
-import mutagen.mp3
+from . import db
 
-from jjm import core
+XHTML = "http://www.w3.org/1999/xhtml"
 
-class authorized(core.BaseDecorator):
-    def __init__(self, func):
-        self.func = func
+class Users(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users 
 
-    def __call__(self, request, *args):
-        if request.session is None:
-            raise webob.exc.HTTPFound(location='/mp3/login.xhtml?url=' + request.path)
+    @xhttp.accept_charset
+    @xhttp.accept
+    def GET(self, req):
+        users = [
+            { "href": "/mp3/u/{0}/".format(user.name_url), "text": user.name }
+            for user in self.users.items
+        ]
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": users,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (["ul", ("xmlns", "http://www.w3.org/1999/xhtml")] 
+                    + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            }
+        }
 
-        if 'MP3' not in request.session.rights:
-            raise webob.exc.HTTPFound(location='/mp3/login.xhtml?url=' + request.path)
+class Library(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
 
-        return self.func(request, *args)
+    @xhttp.accept_charset
+    @xhttp.accept
+    def GET(self, req, username):
+        try:
+            user = self.users.resolve(username)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-class LibraryModel(object):
-    def __init__(self, library):
-        self._library_name = library
-        self._library = None
-        self._library_time = 0
-        self._library_client = None
+        collections = [ { "href": "/mp3/u/{0}/{1}".format(username, collection.name_url), 
+                          "text": collection.name }
+                        for collection in user.library.items ]
 
-    def _load_library(self):
-        with open(self._library_name, 'r') as f:
-            self._library = json.load(f)
-            self._library_time = os.stat(self._library_name).st_mtime
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": collections,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
+                ),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            }
+        }
 
-    def _gen_library_client(self):
-        self._library_client = dict(
-            (artist, dict(
-                (album, 
-                    dict(
-                        ('{0:02}'.format(int(track)), self.library[artist][album][track]['name'])
-                        for track in self.library[artist][album]))
-                for album in self.library[artist]))
-            for artist in self.library)
+    @xhttp.post({ "path": "^(.+)$" })
+    def POST(self, req, username):
+        user = self.users.get_by_name_url(username)
+        collection = user.library.add(req["x-post"]["path"])
+        self.users.save()
+        location = "/mp3/u/{0}/{1}/".format(username, collection.name_url)
+        raise xhttp.HTTPException(xhttp.status.SEE_OTHER, { "location": location })
 
-    def _get_library(self):
-        if not self._library:
-            self._load_library()
-        return self._library
-    library = property(_get_library)
+class Collection(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
 
-    def _get_library_client(self):
-        if self._library_time < os.stat(self._library_name).st_mtime:
-            self._library = None
-            self._library_client = None
-            self._library_time = 0
-        if not self._library_client:
-            self._gen_library_client()
-        return self._library_client
-    library_client = property(_get_library_client)
+    @xhttp.accept_charset
+    @xhttp.accept
+    def GET(self, req, username, collection_name):
+        try:
+            collection = self.users.resolve(username, collection_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-class Model(object):
-    def __init__(self, library):
-        self.library = LibraryModel(library)
+        artists = [ { "href": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, href), "text": text }
+                    for (text, href) in collection.get_artists() ]
 
-class Artists(core.Resource):
-    #authorized
-    @core.transformer
-    def GET(self, request):
-        if 'lazy' in request.GET and request.GET['lazy'] == 'true':
-            return 200, 'application/json', sorted(MODEL.library.library_client.keys())
-        else:
-            return 200, 'application/json', MODEL.library.library_client
+        return { 
+            "x-status": xhttp.status.OK,
+            "x-content": artists,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
+                ),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            }
+        }
 
-class ArtistInfo(core.Resource):
-    @core.transformer
-    def GET(self, request, artist):
-        if 'lazy' in request.GET and request.GET['lazy'] == 'true':
-            return 200, 'application/json', sorted(MODEL.library.library_client[artist].keys())
-        else:
-            return 200, 'application/json', MODEL.library.library_client[artist]
+class Artist(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
+   
+    @xhttp.accept_charset
+    @xhttp.accept 
+    def GET(self, req, username, collection_name, artist_name):
+        try:
+            albums = self.users.resolve(username, collection_name, artist_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-class AlbumInfo(core.Resource):
-    @core.transformer
-    def GET(self, request, artist, album):
-        if 'lazy' in request.GET and request.GET['lazy'] == 'true':
-            return 200, 'application/json', sorted(MODEL.library.library_client[artist][album].keys())
-        else:
-            return 200, 'application/json', MODEL.library.library_client[artist][album]
+        document = [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, href), 
+                       "text": text }
+                     for (text, href) in albums.get_albums() ]
 
-class TrackInfo(core.Resource):
-    #authorized
-    @core.transformer
-    def GET(self, request, artist, album, track, title):
-        fn = MODEL.library.library[artist][album][track]['fn'].encode('utf8');
-        id3 = mutagen.mp3.MP3(fn)
-        cover = None
-        mime = None
-        if 'APIC:' in id3:
-            mime = id3['APIC:'].mime
-            #cover = '/mp3/tracks/{0}/{1}/{2}/{3}.jpg'.format(artist, album, track, title)
-        return 200, 'application/json', {
-            'artist':artist,
-            'album':album,
-            'track':track,
-            'title':title,
-            'cover':mime}
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": document,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            },
+            "x-handler": type(self).__name__
+        }
 
-class TrackCover(core.Resource):
-    @core.transformer
-    def GET(self, request, artist, album, track, title):
-        filename = MODEL.library.library[artist][album][track]['fn'].encode('utf8')
-        id3 = mutagen.mp3.MP3(filename)
-        if 'APIC:' in id3:
-            return 200, str(id3['APIC:'].mime), id3['APIC:'].data
-        else:
-            return 404, 'text/plain', 'No cover'
+class Album(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
+   
+    @xhttp.accept_charset
+    @xhttp.accept 
+    def GET(self, req, username, collection_name, artist_name, album_name):
+        try:
+            tracks = self.users.resolve(username, collection_name, artist_name, album_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-class TrackDownload(core.Resource):
-    @core.partial
-    def GET(self, request, artist, album, track, title):
-        filename = MODEL.library.library[artist][album][track]['fn'].encode('utf8')
-        filesize = os.stat(filename).st_size
-        response = webob.Response(content_type='audio/mpeg')
-        response.body_stream = open(filename, 'rb')
-        response.content_length = filesize
-        #response.headers['X-Accel-Limit-Rate'] = str(50 * 1024);
-        return response
+        document = {
+            "download_url": "/mp3/u/{0}/{1}/{2}/{3}.zip".format(username, collection_name, artist_name, album_name),
+            "items": [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track.track, track.title_url), 
+                         "text": track.title }
+                       for track in tracks.items ]
+        }
 
-class AlbumDownload(core.Resource):
-    @core.partial
-    @core.cached(8)
-    def GET(self, request, artist, album):
-        core.debug(request, 'download {0} {1}'.format(repr(artist), repr(album)))
-        albuminfo = MODEL.library.library[artist][album]
-        filenames = [ albuminfo[track]['fn'] for track in sorted(albuminfo.keys(), key=int) ]
-        buf = StringIO.StringIO()
-        zf  = zipfile.ZipFile(buf, 'w')
-        for fn in filenames:
-            artist = re.sub(r'[\/:*?<>|]', '_', artist)
-            album = re.sub(r'[\/:*?<>|]', '_', album)
-            arcname = u'{0} - {1}/{2}'.format(artist, album, os.path.basename(fn));
-            core.debug(request, repr(os.path.basename(fn)))
-            core.debug(request, repr(arcname))
-            zf.write(fn.encode('utf8'), arcname=arcname.encode('windows-1252'), compress_type=zipfile.ZIP_STORED)
-        zf.close()
-        result = webob.Response(content_type='application/zip', content_length=len(buf.getvalue()))
-        result.body_stream = buf
-        buf.seek(0)
-        return result
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": document,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (
+                    ["div", ("xmlns", XHTML),
+                        ["ol"] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj["items"] ],
+                        ["a", ("href", obj["download_url"]), "Download"]]
+                ),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            }
+        }
 
-class Login(core.Resource):
-    def POST(self, request):
-        users = ((core.ini.auth['username{0}'.format(i)],
-                  core.ini.auth['password{0}'.format(i)],
-                  core.ini.auth['rights{0}'.format(i)])
-                 for i in range(int(core.ini.auth.count)))
-        for (u,p,r) in users:
-            if request.POST['username'] != u: continue
-            if request.POST['password'] != p: continue
-            location = ('redirect' in request.POST) and request.POST['redirect'] or '/mp3'
-            response = webob.Response(status_int=302, location=location)
-            core.session.start_session(request, response)
-            request.session.rights = r
-            return response
-        else:
-            raise webob.exc.HTTPForbidden('Bad username or password.')    
+class AlbumZipFile(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
 
-class AuthFileServer(core.FileServer):
-    #authorized
-    def GET(self, request, filename):
-        return super(AuthFileServer, self).GET(request, filename)
+class TrackInfo(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
 
-class Mp3Server(core.Resource):
-    #authorized
-    def GET(self, request):
-        raise webob.exc.HTTPFound(location='mp3.xhtml')
-        
-MODEL = Model('/home/joost/www/mp3/mp3.json')
+    @xhttp.accept_charset
+    @xhttp.accept
+    def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
+        try:
+            track = self.users.resolve(username, collection_name, artist_name, album_name, track_num, track_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
+
+        document = {
+            "artist": track.artist,
+            "album": track.album,
+            "track": track.track,
+            "title": track.title,
+            "year": track.year,
+            "mp3_url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}.mp3".format(username, collection_name, artist_name, album_name,
+                                                                   track_num, track_name),
+            "cover_url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}.jpg".format(username, collection_name, artist_name, album_name,
+                                                                     track_num, track_name)
+                         if track.image_type else None
+        }
+
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": document,
+            "x-content-view": {
+                "application/json": lambda obj: obj,
+                "application/xhtml+xml": lambda obj: (
+                    ["dl", ("xmlns", XHTML),
+                        ["dt", "Artist"], ["dd", obj["artist"]],
+                        ["dt", "Album"], ["dd", obj["album"]],
+                        ["dt", "Track"], ["dd", obj["track"]],
+                        ["dt", "Title"], ["dd", obj["title"]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["mp3_url"]), obj["mp3_url"]]],
+                        ["dt", "Cover"], ["dd", ["img", ("src", obj["cover_url"])] if obj["cover_url"] else "-"]]
+                ),
+                "text/plain": lambda obj: repr(obj) + "\n"
+            }
+        }
+
+class MP3File(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
+
+    def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
+        try:
+            track = self.users.resolve(username, collection_name, artist_name, album_name, track_num, track_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
+
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": open(track.fn, "rb").read(),
+            "content-type": "audio/mpeg"
+        }
+
+class MP3Cover(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
+
+    def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
+        try:
+            track = self.users.resolve(username, collection_name, artist_name, album_name, track_num, track_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
+
+        if not track.image_type:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND)
+
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": track.image_data,
+            "content-type": track.image_type
+        }
+   
+class MP3Server(xhttp.Router):
+    def __init__(self):
+        self.users = db.Users("run")
+        super(MP3Server, self).__init__(
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",    MP3Cover(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",       TrackInfo(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",                AlbumZipFile(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                   Album(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/$",                         Artist(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/$",                               Collection(self.users)),
+            ("^/mp3/u/(.+?)/$",                                     Library(self.users)),
+            ("^/mp3/u/$",                                           Users(self.users)),
+        )
+
+class Application(MP3Server):
+    @xhttp.xhttp_app
+    @xhttp.catcher
+    def __call__(self, req, *a, **k):
+        return super(Application, self).__call__(req, *a, **k)
+
+app = Application()
+
+if __name__ == "__main__":
+    xhttp.run_server(app, ip="", port=8000)
 
