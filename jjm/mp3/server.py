@@ -37,6 +37,10 @@ class Library(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.vary("Accept", "Accept-Charset", "Accept-Encoding")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.accept_encoding
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req, username):
@@ -45,7 +49,7 @@ class Library(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        collections = [ { "href": "/mp3/u/{0}/{1}".format(username, collection.name_url), 
+        collections = [ { "href": "/mp3/u/{0}/{1}/".format(username, collection.name_url), 
                           "text": collection.name }
                         for collection in user.library.items ]
 
@@ -58,7 +62,8 @@ class Library(xhttp.Resource):
                     ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
-            }
+            },
+            "last-modified": xhttp.DateHeader(user.library.get_mtime()),
         }
 
     @xhttp.post({ "path": "^(.+)$" })
@@ -73,6 +78,10 @@ class Collection(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.vary("Accept", "Accept-Charset", "Accept-Encoding")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.accept_encoding
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req, username, collection_name):
@@ -93,13 +102,18 @@ class Collection(xhttp.Resource):
                     ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
-            }
+            },
+            "last-modified": xhttp.DateHeader(collection.get_mtime())
         }
 
 class Artist(xhttp.Resource):
     def __init__(self, users):
         self.users = users
    
+    @xhttp.vary("Accept", "Accept-Charset", "Accept-Encoding")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.accept_encoding
     @xhttp.accept_charset
     @xhttp.accept 
     def GET(self, req, username, collection_name, artist_name):
@@ -121,13 +135,17 @@ class Artist(xhttp.Resource):
                     ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
-            "x-handler": type(self).__name__
+            "last-modified": xhttp.DateHeader(albums.get_mtime())
         }
 
 class Album(xhttp.Resource):
     def __init__(self, users):
         self.users = users
    
+    @xhttp.vary("Accept", "Accept-Charset", "Accept-Encoding")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.accept_encoding
     @xhttp.accept_charset
     @xhttp.accept 
     def GET(self, req, username, collection_name, artist_name, album_name):
@@ -154,7 +172,8 @@ class Album(xhttp.Resource):
                         ["a", ("href", obj["download_url"]), "Download"]]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
-            }
+            },
+            "last-modified": xhttp.DateHeader(tracks.get_mtime())
         }
 
 class AlbumZipFile(xhttp.Resource):
@@ -165,6 +184,10 @@ class TrackInfo(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.vary("Accept", "Accept-Charset", "Accept-Encoding")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.accept_encoding
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
@@ -201,13 +224,15 @@ class TrackInfo(xhttp.Resource):
                         ["dt", "Cover"], ["dd", ["img", ("src", obj["cover_url"])] if obj["cover_url"] else "-"]]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
-            }
+            },
+            "last-modified": xhttp.DateHeader(track.mtime)
         }
 
 class MP3File(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.ranged
     def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
         try:
             track = self.users.resolve(username, collection_name, artist_name, album_name, track_num, track_name)
@@ -255,12 +280,40 @@ class MP3Server(xhttp.Router):
         )
 
 class Application(MP3Server):
+    def __init__(self, debug=False):
+        self.debug = debug
+        super(Application, self).__init__()
+
     @xhttp.xhttp_app
     @xhttp.catcher
     def __call__(self, req, *a, **k):
-        return super(Application, self).__call__(req, *a, **k)
+        if self.debug:
+            print
+            for key in sorted(req.keys()):
+                print "> {0:20} : {1!r}".format(key, req[key])
+            print
+        try:
+            res = super(Application, self).__call__(req, *a, **k)
+        except xhttp.HTTPException as e:
+            if self.debug:
+                res = e.response()
+                for key in sorted(res.keys()):
+                    if key == "x-content":
+                        print "<!{0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key]))
+                    else:
+                        print "<!{0:20} : {1!r}".format(key, res[key])
+            print
+            raise
+        if self.debug:
+            for key in sorted(res.keys()):
+                if key == "x-content":
+                    print "< {0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key]))
+                else:
+                    print "< {0:20} : {1!r}".format(key, res[key])
+            print
+        return res
 
-app = Application()
+app = Application(debug=True)
 
 if __name__ == "__main__":
     xhttp.run_server(app, ip="", port=8000)

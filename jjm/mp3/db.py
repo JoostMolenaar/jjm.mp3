@@ -197,6 +197,9 @@ class TrackList(object):
     def get_tracks(self):
         return sorted({ (track.title, track.title_url) for track in self.items })
 
+    def get_mtime(self):
+        return max(track.mtime for track in self.items)
+
 #
 # Collection
 #
@@ -296,6 +299,9 @@ class Library(object):
             if collection.name_url == name_url:
                 return collection
         raise KeyError(name_url)
+
+    def get_mtime(self):
+        return max(collection.get_mtime() for collection in self.items)
 
 #
 # LocalUser
