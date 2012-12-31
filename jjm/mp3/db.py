@@ -4,12 +4,15 @@ import hashlib
 import json
 import os.path
 import re
+import StringIO
 
 from itertools import groupby
 
 import mutagen
 import mutagen.id3
 import mutagen.mp3
+
+import Image as PIL
 
 from unidecode import unidecode
 
@@ -150,6 +153,16 @@ class Track(object):
     def image_data(self):
         return mutagen.mp3.MP3(os.path.abspath(self.fn))['APIC:'].data
 
+    @property
+    def image_data_small(self):
+        data = StringIO.StringIO(self.image_data)
+        result = StringIO.StringIO()
+        image = PIL.open(data)
+        thumb = image.resize((75, 75), PIL.ANTIALIAS)
+        thumb.save(result, 'jpeg')
+        result.seek(0)
+        return result.buf
+
 #
 # TrackList
 #
@@ -199,6 +212,13 @@ class TrackList(object):
 
     def get_mtime(self):
         return max(track.mtime for track in self.items)
+
+    def get_first_with_cover(self):
+        result = (track for track in self.items if track.image_type) 
+        try:
+            return next(result)
+        except StopIteration:
+            return None
 
 #
 # Collection

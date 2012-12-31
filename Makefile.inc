@@ -8,7 +8,7 @@ MAIN ?= jjm.mp3.server
 PKG_BASE = file:///home/joost/git
 PKG = jjm jjm.xhttp jjm.xml jjm.sh
 
-STATIC_DIRS = conf web run
+STATIC_DIRS = conf run static
 
 test-db: MAIN=jjm.mp3.db
 test-db: test

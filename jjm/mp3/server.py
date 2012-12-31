@@ -18,17 +18,17 @@ class Users(xhttp.Resource):
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req):
-        users = [
-            { "href": "/mp3/u/{0}/".format(user.name_url), "text": user.name }
-            for user in self.users.items
-        ]
+        document = { "items": [ { "href": "/mp3/u/{0}/".format(user.name_url),
+                                  "text": user.name,
+                                  "id": user.name_url }
+                                for user in self.users.items ] }
         return {
             "x-status": xhttp.status.OK,
-            "x-content": users,
+            "x-content": document,
             "x-content-view": {
                 "application/json": lambda obj: obj,
                 "application/xhtml+xml": lambda obj: (["ul", ("xmlns", "http://www.w3.org/1999/xhtml")] 
-                    + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]),
+                    + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj["items"] ]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             }
         }
@@ -49,17 +49,18 @@ class Library(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        collections = [ { "href": "/mp3/u/{0}/{1}/".format(username, collection.name_url), 
-                          "text": collection.name }
-                        for collection in user.library.items ]
-
+        document = { "id": username,
+                     "items": [ { "href": "/mp3/u/{0}/{1}/".format(username, collection.name_url), 
+                                  "text": collection.name,
+                                  "id": collection.name_url }
+                                for collection in user.library.items ] }
         return {
             "x-status": xhttp.status.OK,
-            "x-content": collections,
+            "x-content": document,
             "x-content-view": {
                 "application/json": lambda obj: obj,
                 "application/xhtml+xml": lambda obj: (
-                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj["items"] ]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
@@ -90,16 +91,18 @@ class Collection(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        artists = [ { "href": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, href), "text": text }
-                    for (text, href) in collection.get_artists() ]
+        document = { "id": collection_name,
+                     "items": [ { "href": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, href), 
+                                  "text": text }
+                                for (text, href) in collection.get_artists() ] }
 
         return { 
             "x-status": xhttp.status.OK,
-            "x-content": artists,
+            "x-content": document,
             "x-content-view": {
                 "application/json": lambda obj: obj,
                 "application/xhtml+xml": lambda obj: (
-                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj["items"] ]
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
@@ -122,9 +125,10 @@ class Artist(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, href), 
-                       "text": text }
-                     for (text, href) in albums.get_albums() ]
+        document = { "id": artist_name,
+                     "items": [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, href), 
+                                  "text": text }
+                              for (text, href) in albums.get_albums() ] }
 
         return {
             "x-status": xhttp.status.OK,
@@ -132,7 +136,7 @@ class Artist(xhttp.Resource):
             "x-content-view": {
                 "application/json": lambda obj: obj,
                 "application/xhtml+xml": lambda obj: (
-                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj ]),
+                    ["ul", ("xmlns", XHTML)] + [ ["li", ["a", ("href", a["href"]), a["text"]]] for a in obj["items"] ]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
             "last-modified": xhttp.DateHeader(albums.get_mtime())
@@ -150,15 +154,22 @@ class Album(xhttp.Resource):
     @xhttp.accept 
     def GET(self, req, username, collection_name, artist_name, album_name):
         try:
-            tracks = self.users.resolve(username, collection_name, artist_name, album_name)
+            album = self.users.resolve(username, collection_name, artist_name, album_name)
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
+        cover_track = album.get_first_with_cover()
+
         document = {
+            "id": album_name,
             "download_url": "/mp3/u/{0}/{1}/{2}/{3}.zip".format(username, collection_name, artist_name, album_name),
+            "cover_image_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg".format(username, collection_name, artist_name, album_name) 
+                               if cover_track else None,
+            "cover_thumb_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg?small=true".format(username, collection_name, artist_name, album_name)
+                               if cover_track else None,
             "items": [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track.track, track.title_url), 
                          "text": track.title }
-                       for track in tracks.items ]
+                       for track in album.items ]
         }
 
         return {
@@ -173,12 +184,38 @@ class Album(xhttp.Resource):
                 ),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
-            "last-modified": xhttp.DateHeader(tracks.get_mtime())
+            "last-modified": xhttp.DateHeader(album.get_mtime())
         }
 
 class AlbumZipFile(xhttp.Resource):
     def __init__(self, users):
         self.users = users
+
+class AlbumCover(xhttp.Resource):
+    def __init__(self, users):
+        self.users = users
+
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
+    @xhttp.get({ "small?" : "^false|true$" })
+    def GET(self, req, username, collection_name, artist_name, album_name):
+        try:
+            album = self.users.resolve(username, collection_name, artist_name, album_name)
+        except KeyError as e:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
+
+        track = album.get_first_with_cover()
+        if not track:
+            raise xhttp.HTTPException(xhttp.status.NOT_FOUND)
+
+        small = req["x-get"]["small"] == "true"
+
+        return {
+            "x-status": xhttp.status.OK,
+            "x-content": track.image_data_small if small else track.image_data,
+            "content-type": track.image_type,
+            "last-modified": xhttp.DateHeader(track.mtime)
+        }
 
 class TrackInfo(xhttp.Resource):
     def __init__(self, users):
@@ -232,6 +269,9 @@ class MP3File(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.vary("Range", "If-Modified-Since")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
     @xhttp.ranged
     def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
         try:
@@ -242,13 +282,17 @@ class MP3File(xhttp.Resource):
         return {
             "x-status": xhttp.status.OK,
             "x-content": open(track.fn, "rb").read(),
-            "content-type": "audio/mpeg"
+            "content-type": "audio/mpeg",
+            "last-modified": xhttp.DateHeader(track.mtime)
         }
 
 class MP3Cover(xhttp.Resource):
     def __init__(self, users):
         self.users = users
 
+    @xhttp.vary("If-Modified-Since")
+    @xhttp.cache_control("max-age=0", "must-revalidate")
+    @xhttp.if_modified_since
     def GET(self, req, username, collection_name, artist_name, album_name, track_num, track_name):
         try:
             track = self.users.resolve(username, collection_name, artist_name, album_name, track_num, track_name)
@@ -261,7 +305,8 @@ class MP3Cover(xhttp.Resource):
         return {
             "x-status": xhttp.status.OK,
             "x-content": track.image_data,
-            "content-type": track.image_type
+            "content-type": track.image_type,
+            "last-modified": xhttp.DateHeader(track.mtime)
         }
    
 class MP3Server(xhttp.Router):
@@ -272,12 +317,21 @@ class MP3Server(xhttp.Router):
             ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
             ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",       TrackInfo(self.users)),
             ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",                AlbumZipFile(self.users)),
+            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).jpg$",                AlbumCover(self.users)),
             ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                   Album(self.users)),
             ("^/mp3/u/(.+?)/(.+?)/(.+?)/$",                         Artist(self.users)),
             ("^/mp3/u/(.+?)/(.+?)/$",                               Collection(self.users)),
             ("^/mp3/u/(.+?)/$",                                     Library(self.users)),
             ("^/mp3/u/$",                                           Users(self.users)),
+            ("^/mp3/(.*\.css)$",                                    xhttp.FileServer("static", "text/css")),
+            ("^/mp3/(.*\.js)$",                                     xhttp.FileServer("static", "application/javascript")),
+            ("^/mp3/(.*\.html)$",                                   xhttp.FileServer("static", "application/xhtml+xml")),
+            ("^/mp3/$",                                             xhttp.Redirector("/mp3/mp3.html"))
         )
+
+    @xhttp.catcher
+    def __call__(self, req, *a, **k):
+        return super(MP3Server, self).__call__(req, *a, **k)
 
 class Application(MP3Server):
     def __init__(self, debug=False):
@@ -285,7 +339,6 @@ class Application(MP3Server):
         super(Application, self).__init__()
 
     @xhttp.xhttp_app
-    @xhttp.catcher
     def __call__(self, req, *a, **k):
         if self.debug:
             print
