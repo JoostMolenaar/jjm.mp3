@@ -336,20 +336,20 @@ class MP3Server(xhttp.Router):
     def __init__(self):
         self.users = db.Users("run")
         super(MP3Server, self).__init__(
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",    MP3Cover(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",       TrackInfo(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",                AlbumZipFile(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).jpg$",                AlbumCover(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                   Album(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/(.+?)/$",                         Artist(self.users)),
-            ("^/mp3/u/(.+?)/(.+?)/$",                               Collection(self.users)),
-            ("^/mp3/u/(.+?)/$",                                     Library(self.users)),
-            ("^/mp3/u/$",                                           Users(self.users)),
-            ("^/mp3/(.*\.css)$",                                    xhttp.FileServer("static", "text/css")),
-            ("^/mp3/(.*\.js)$",                                     xhttp.FileServer("static", "application/javascript")),
-            ("^/mp3/(.*\.html)$",                                   xhttp.FileServer("static", "application/xhtml+xml")),
-            ("^/mp3/$",                                             xhttp.Redirector("/mp3/mp3.html"))
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",   MP3Cover(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",   MP3File(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",      TrackInfo(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",               AlbumZipFile(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).jpg$",               AlbumCover(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                  Album(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/$",                        Artist(self.users)),
+            (r"^/mp3/u/(.+?)/(.+?)/$",                              Collection(self.users)),
+            (r"^/mp3/u/(.+?)/$",                                    Library(self.users)),
+            (r"^/mp3/u/$",                                          Users(self.users)),
+            (r"^/mp3/(.*\.css)$",                                   xhttp.FileServer("static", "text/css")),
+            (r"^/mp3/(.*\.js)$",                                    xhttp.FileServer("static", "application/javascript")),
+            (r"^/mp3/(.*\.xhtml)$",                                 xhttp.FileServer("static", "application/xhtml+xml")),
+            (r"^/mp3/$",                                            xhttp.Redirector("/mp3/mp3.xhtml"))
         )
 
     @xhttp.catcher
