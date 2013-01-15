@@ -1,13 +1,16 @@
-
-var Track = Backbone.Model.extend({
+var Resource = Backbone.Model.extend({
     url: function() {
         return this.get("href");
+    },
+
+    dump: function() {
+        obj = this.toJSON();
+        console && console.log && console.log(JSON.stringify(obj));
+        return obj;
     }
 });
 
-var Album = Backbone.Model.extend({
-    itemType: Backbone.Collection.extend({ model: Track }),
-
+var CollectionResource = Resource.extend({
     defaults: function() {
         return { items: new this.itemType() };
     },
@@ -17,10 +20,6 @@ var Album = Backbone.Model.extend({
         return obj;
     },
 
-    url: function() {
-        return this.get("href");
-    },
-
     toJSON: function() {
         var obj = Backbone.Model.prototype.toJSON.call(this);
         obj.items = obj.items.map(function(item) { return item.toJSON() });
@@ -28,95 +27,29 @@ var Album = Backbone.Model.extend({
     }
 });
 
-var Artist = Backbone.Model.extend({
-    itemType: Backbone.Collection.extend({ model: Album }),
+var Track = Resource.extend();
 
-    defaults: function() {
-        return { items: new this.itemType() };
-    },
-
-    parse: function(obj) {
-        obj.items = this.get("items").reset(obj.items);
-        return obj;
-    },
-
-    url: function() {
-        return this.get("href");
-    },
-
-    toJSON: function() {
-        var obj = Backbone.Model.prototype.toJSON.call(this);
-        obj.items = obj.items.map(function(item) { return item.toJSON() });
-        return obj;
-    }
+var Album = CollectionResource.extend({
+    itemType: Backbone.Collection.extend({ model: Track })
 });
 
-var Collection = Backbone.Model.extend({
-    itemType: Backbone.Collection.extend({ model: Artist }),
-
-    defaults: function() {
-        return { items: new this.itemType() };
-    },
-
-    parse: function(obj) {
-        obj.items = this.get("items").reset(obj.items);
-        return obj;
-    },
-
-    url: function() { 
-        return this.get("href");
-    },
-
-    toJSON: function() {
-        var obj = Backbone.Model.prototype.toJSON.call(this);
-        obj.items = obj.items.map(function(item) { return item.toJSON() });
-        return obj;
-    }
+var Artist = CollectionResource.extend({
+    itemType: Backbone.Collection.extend({ model: Album })
 });
 
-var Library = Backbone.Model.extend({
-    itemType: Backbone.Collection.extend({ model: Collection }),
-
-    defaults: function() {
-        return { items: new this.itemType() };
-    },
-
-    parse: function(obj) {
-        obj.items = this.get("items").reset(obj.items);
-        return obj;
-    },
-
-    url: function() {
-        return this.get("href");
-    },
-
-    toJSON: function() {
-        var obj = Backbone.Model.prototype.toJSON.call(this);
-        obj.items = obj.items.map(function(item) { return item.toJSON() });
-        return obj;
-    }
+var Collection = CollectionResource.extend({
+    itemType: Backbone.Collection.extend({ model: Artist })
 });
 
-var Users = Backbone.Model.extend({
+var Library = CollectionResource.extend({
+    itemType: Backbone.Collection.extend({ model: Collection })
+});
+
+var Users = CollectionResource.extend({
     itemType: Backbone.Collection.extend({ model: Library }),
-
-    defaults: function() {
-        return { items: new this.itemType() };
-    },
-
-    parse: function(obj) {
-        obj.items = this.get("items").reset(obj.items);
-        return obj;
-    },
 
     url: function() { 
         return "/mp3/u/";
-    },
-
-    toJSON: function() {
-        var obj = Backbone.Model.prototype.toJSON.call(this);
-        obj.items = obj.items.map(function(item) { return item.toJSON() });
-        return obj;
     }
 });
 
@@ -131,7 +64,6 @@ var UserListView = Backbone.View.extend({
 
     render: function() {
         var obj = this.model.toJSON();
-        console.log(JSON.stringify(obj));
         var html = Mustache.render(this.template, obj);
         this.$el.html(html);
         return this;
