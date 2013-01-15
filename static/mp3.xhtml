@@ -26,10 +26,38 @@
             <div id="track"/>
         </div>
 
+        <script id="tracks-template" type="application/xhtml+xml">
+            <h1>{{name}}</h1>
+            {{#items}}
+            <a href="{{url}}">{{name}}</a>
+            {{/items}}
+        </script> 
+
+        <script id="albums-template" type="application/xhtml+xml">
+            <h1>{{name}}</h1>
+            {{#items}}
+            <a href="{{url}}">{{name}}</a>
+            {{/items}}
+        </script> 
+
+        <script id="artists-template" type="application/xhtml+xml">
+            <h1>{{name}}</h1>
+            {{#items}}
+            <a href="{{url}}">{{name}}</a>
+            {{/items}}
+        </script> 
+
+        <script id="collections-template" type="application/xhtml+xml">
+            <h1>{{name}}</h1>
+            {{#items}}
+            <a href="{{url}}">{{name}}</a>
+            {{/items}}
+        </script> 
+
         <script id="users-template" type="application/xhtml+xml">
             <h1>{{name}}</h1>
             {{#items}}
-            <a href="{{href}}">{{name}}</a>
+            <a href="{{url}}">{{name}}</a>
             {{/items}}
         </script> 
 
