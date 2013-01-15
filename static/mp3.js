@@ -1,6 +1,6 @@
 var Resource = Backbone.Model.extend({
     url: function() {
-        return this.get("href");
+        return this.get("url");
     },
 
     dump: function() {

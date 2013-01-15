@@ -18,9 +18,9 @@ class Users(xhttp.Resource):
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req):
-        document = { "href": "/mp3/u/",
+        document = { "url": "/mp3/u/",
                      "name": "Users",
-                     "items": [ { "href": "/mp3/u/{0}/".format(user.name_url),
+                     "items": [ { "url": "/mp3/u/{0}/".format(user.name_url),
                                   "name": user.name }
                                 for user in self.users.items ] }
         return {
@@ -31,9 +31,9 @@ class Users(xhttp.Resource):
                 "application/xhtml+xml": lambda obj: (
                     ["dl", ("xmlns", XHTML),
                         ["dt", "Name"], ["dd", obj["name"]],
-                        ["dt", "Address"], ["dd", ["a", ("href", obj["href"]), obj["href"]]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["url"]), obj["url"]]],
                         ["dt", "Items"], ["dd",
-                            ["ul"] + [ ["li", ["a", ("href", a["href"]), a["name"]]] for a in obj["items"] ]]]),
+                            ["ul"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]]]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             }
         }
@@ -54,9 +54,9 @@ class Library(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = { "href": "/mp3/u/{0}/".format(username),
+        document = { "url": "/mp3/u/{0}/".format(username),
                      "name": user.name,
-                     "items": [ { "href": "/mp3/u/{0}/{1}/".format(username, collection.name_url),
+                     "items": [ { "url": "/mp3/u/{0}/{1}/".format(username, collection.name_url),
                                   "name": collection.name }
                                 for collection in user.library.items ] }
         return {
@@ -67,9 +67,9 @@ class Library(xhttp.Resource):
                 "application/xhtml+xml": lambda obj: (
                     ["dl", ("xmlns", XHTML),
                         ["dt", "Name"], ["dd", obj["name"]],
-                        ["dt", "Address"], ["dd", ["a", ("href", obj["href"]), obj["href"]]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["url"]), obj["url"]]],
                         ["dt", "Items"], ["dd",
-                            ["ul"] + [ ["li", ["a", ("href", a["href"]), a["name"]]] for a in obj["items"] ]]]),
+                            ["ul"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]]]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
             "last-modified": xhttp.DateHeader(user.library.get_mtime()),
@@ -99,11 +99,11 @@ class Collection(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = { "href": "/mp3/u/{0}/{1}/".format(username, collection_name),
+        document = { "url": "/mp3/u/{0}/{1}/".format(username, collection_name),
                      "name": collection.name,
-                     "items": [ { "href": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, href), 
+                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, url), 
                                   "name": name}
-                                for (name, href) in collection.get_artists() ] }
+                                for (name, url) in collection.get_artists() ] }
 
         return { 
             "x-status": xhttp.status.OK,
@@ -113,9 +113,9 @@ class Collection(xhttp.Resource):
                 "application/xhtml+xml": lambda obj: (
                     ["dl", ("xmlns", XHTML),
                         ["dt", "Name"], ["dd", obj["name"]],
-                        ["dt", "Address"], ["dd", ["a", ("href", obj["href"]), obj["href"]]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["url"]), obj["url"]]],
                         ["dt", "Items"], ["dd",
-                            ["ul"] + [ ["li", ["a", ("href", a["href"]), a["name"]]] for a in obj["items"] ]]]),
+                            ["ul"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]]]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
             "last-modified": xhttp.DateHeader(collection.get_mtime())
@@ -137,11 +137,11 @@ class Artist(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = { "href": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, artist_name),
+        document = { "url": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, artist_name),
                      "name": albums[0].artist,
-                     "items": [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, href), 
+                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, url), 
                                   "name": name}
-                              for (name, href) in albums.get_albums() ] }
+                              for (name, url) in albums.get_albums() ] }
 
         return {
             "x-status": xhttp.status.OK,
@@ -151,9 +151,9 @@ class Artist(xhttp.Resource):
                 "application/xhtml+xml": lambda obj: (
                     ["dl", ("xmlns", XHTML),
                         ["dt", "Name"], ["dd", obj["name"]],
-                        ["dt", "Address"], ["dd", ["a", ("href", obj["href"]), obj["href"]]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["url"]), obj["url"]]],
                         ["dt", "Items"], ["dd",
-                            ["ul"] + [ ["li", ["a", ("href", a["href"]), a["name"]]] for a in obj["items"] ]]]),
+                            ["ul"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]]]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
             "last-modified": xhttp.DateHeader(albums.get_mtime())
@@ -177,12 +177,12 @@ class Album(xhttp.Resource):
 
         cover_track = album.get_first_with_cover()
 
-        document = { "href": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, album_name), 
+        document = { "url": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, album_name), 
                      "name": album[0].album,
                      "download_url": "/mp3/u/{0}/{1}/{2}/{3}.zip".format(username, collection_name, artist_name, album_name),
                      "cover_image_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg".format(username, collection_name, artist_name, album_name) if cover_track else None,
                      "cover_thumb_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg?small=true".format(username, collection_name, artist_name, album_name) if cover_track else None,
-                     "items": [ { "href": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track.track, track.title_url), 
+                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track.track, track.title_url), 
                                   "name": track.title }
                                 for track in album.items ] }
 
@@ -194,9 +194,9 @@ class Album(xhttp.Resource):
                 "application/xhtml+xml": lambda obj: (
                     ["dl", ("xmlns", XHTML),
                         ["dt", "Name"], ["dd", obj["name"]],
-                        ["dt", "Address"], ["dd", ["a", ("href", obj["href"]), obj["href"]]],
+                        ["dt", "Address"], ["dd", ["a", ("href", obj["url"]), obj["url"]]],
                         ["dt", "Items"], ["dd",
-                            ["ol"] + [ ["li", ["a", ("href", a["href"]), a["name"]]] for a in obj["items"] ]],
+                            ["ol"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]],
                         ["dt", "Download"], ["dd", ["a", ("href", obj["download_url"]), obj["download_url"]]],
                         ["dt", "Cover thumbnail"], ["dd", ["img", ("src", obj["cover_thumb_url"])] if obj["cover_thumb_url"] else "-"],
                         ["dt", "Cover image"], ["dd", ["img", ("src", obj["cover_image_url"])] if obj["cover_image_url"] else "-"]
@@ -253,7 +253,7 @@ class TrackInfo(xhttp.Resource):
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
         document = {
-            "href": "/mp3/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track_num, track_name),
+            "url": "/mp3/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track_num, track_name),
             "name": track.title,
             "artist": track.artist,
             "album": track.album,
