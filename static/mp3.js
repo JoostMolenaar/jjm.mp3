@@ -16,17 +16,17 @@ var Resource = Backbone.Model.extend({
 });
 
 var CollectionResource = Resource.extend({
-    //initialize: function() {
-    //    this.get("items").on("reset", this.change.bind(this));
-    //},
-
     defaults: function() {
-        return { items: new this.itemType() };
+        return { 
+            items: new this.itemType(),
+            loaded: false,
+            selected: null
+        };
     },
 
     parse: function(obj) {
-        //obj.items = this.get("items").reset(obj.items);
         obj.items = new this.itemType(obj.items);
+        obj.loaded = true;
         return obj;
     },
 
@@ -60,11 +60,7 @@ var Library = CollectionResource.extend({
 });
 
 var Users = CollectionResource.extend({
-    itemType: Backbone.Collection.extend({ model: Library }),
-
-    url: function() { 
-        return "/mp3/u/";
-    }
+    itemType: Backbone.Collection.extend({ model: Library })
 });
 
 /*
@@ -77,9 +73,8 @@ var ListView = Backbone.View.extend({
     },
 
     initialize: function() {
-        if (!this.model)
-            return;
         this.listenTo(this.model, "change", this.render);
+        this.listenTo(this.model, "change:selected", this.changeSubview);
     },
 
     render: function() {
@@ -89,39 +84,79 @@ var ListView = Backbone.View.extend({
         return this;
     },
 
+    destroy: function() {
+        if (this.subview) {
+            this.subview.destroy();
+        }
+        this.$el.empty();
+        this.stopListening();
+    },
+
     itemClicked: function(e) {
         e.preventDefault();
         var url = $(e.target).attr("href");
         var model = this.model.get("items").find(function(item) { return item.get("url") == url; });
-        this.trigger("select", model);
+        this.model.set("selected", null);
+        this.model.set("selected", model);
+    },
+
+    changeSubview: function() {
+        if (this.subview) {
+            this.subview.destroy();
+        }
+        var selected = this.model.get("selected");
+        if (selected) {
+            this.subview = new this.subviewType({ model: selected });
+            if (selected.get("loaded")) {
+                this.subview.render();
+            }
+            else {
+                selected.fetch();
+            }
+        }
     }
 });
 
 /*
  * View types
  */
+
+var TrackDetails = Backbone.View.extend({
+    el: "#track",
+
+    destroy: function() {
+        this.$el.empty();
+        this.stopListening();
+    }
+});
+
 var TrackList = ListView.extend({
     el: "#tracks",
+    subviewType: TrackDetails,
     template: $("#tracks-template").html()
 });
 
 var AlbumList = ListView.extend({
     el: "#albums",
+    subviewType: TrackList,
     template: $("#albums-template").html()
 });
 
 var ArtistList = ListView.extend({
     el: "#artists",
+    subviewType: AlbumList,
     template: $("#artists-template").html()
 });
 
 var CollectionList = ListView.extend({
     el: "#collections",
+    subviewType: ArtistList,
     template: $("#collections-template").html()
 });
 
 var UserList = ListView.extend({
     el: "#users",
+    subviewType: CollectionList,
     template: $("#users-template").html()
 });
 
@@ -129,57 +164,7 @@ var UserList = ListView.extend({
  * Application
  */
 
-USERS = new Users();
+USERS = new Users({ "url": "/mp3/u/" })
 USERS.fetch();
 
-TRACKLIST = new TrackList();
-TRACKLIST.on("select", function(model) {
-    console && console.log && console.log("track selected");
-    model.dump();
-});
-
-ALBUMLIST = new AlbumList();
-ALBUMLIST.on("select", function(model) {
-    console && console.log && console.log("album elected:");
-    model.dump();
-
-    TRACKLIST.model = model;
-    TRACKLIST.initialize();
-
-    model.fetch();
-});
-
-ARTISTLIST = new ArtistList();
-ARTISTLIST.on("select", function(model) {
-    console && console.log && console.log("artist elected:");
-    model.dump();
-
-    ALBUMLIST.model = model;
-    ALBUMLIST.initialize();
-
-    model.fetch();
-});
-
-COLLECTIONLIST = new CollectionList();
-COLLECTIONLIST.on("select", function(model) {
-    console && console.log && console.log("collection selected:");
-    model.dump();
-
-    ARTISTLIST.model = model;
-    ARTISTLIST.initialize();
-
-    model.fetch();
-});
-
-USERLIST = new UserList({
-    model: USERS
-});
-USERLIST.on("select", function(model) {
-    console && console.log && console.log("user selected:");
-    model.dump();
-
-    COLLECTIONLIST.model = model;
-    COLLECTIONLIST.initialize();
-
-    model.fetch();
-}); 
+USERLIST = new UserList({ model: USERS });
