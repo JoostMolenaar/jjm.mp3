@@ -10,6 +10,8 @@
         <script src="lib/backbone-0.9.9.js"/>
         <script src="lib/mustache-0.7.2.js"/>
 
+        <link rel="stylesheet" href="mp3.css"/>
+
     </head>
 
     <body>
@@ -17,48 +19,102 @@
         <div id="controls">
         </div>
 
-        <div class="browser">
-            <div id="users"/>
-            <div id="collections"/>
-            <div id="artists"/>
-            <div id="albums"/>
-            <div id="tracks"/>
-            <div id="track"/>
+        <div id="browser">
+            <div class="browser-scroll-x">
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="users"/>
+                </div>
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="collections"/>
+                </div>
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="artists"/>
+                </div>
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="albums"/>
+                </div>
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="tracks"/>
+                </div>
+                <div class="browser-scroll-y">
+                    <div class="browser-content" id="track"/>
+                </div>
+            </div>
         </div>
 
+        <script id="track-template" type="application/xhtml+xml">
+            <div>
+                <h1>{{name}}</h1>
+                <dl>
+                    <dt>Artist</dt>
+                    <dd>{{artist}}</dd>
+
+                    <dt>Album</dt>
+                    <dd>{{album}}</dd>
+
+                    <dt>Track</dt>
+                    <dd>{{track}}</dd>
+
+                    <dt>Title</dt>
+                    <dd>{{title}}</dd>
+
+                    {{#year}}
+                    <dt>Year</dt>
+                    <dd>{{year}}</dd>
+                    {{/year}}
+
+                    <dt>Length</dt>
+                    <dd>{{length}} s</dd>
+
+                    <dt>Bitrate</dt>
+                    <dd>{{bitrate}} kbps</dd>
+                </dl>
+            </div>
+        </script>
+
         <script id="tracks-template" type="application/xhtml+xml">
-            <h1>{{name}}</h1>
-            {{#items}}
-            <a href="{{url}}">{{name}}</a>
-            {{/items}}
+            <div>
+                <h1>{{name}}</h1>
+                {{#items}}
+                <a href="{{url}}">{{name}}</a>
+                {{/items}}
+            </div>
         </script> 
 
         <script id="albums-template" type="application/xhtml+xml">
-            <h1>{{name}}</h1>
-            {{#items}}
-            <a href="{{url}}">{{name}}</a>
-            {{/items}}
+            <div>
+                <h1>{{name}}</h1>
+                {{#items}}
+                <a href="{{url}}">{{name}}</a>
+                {{/items}}
+            </div>
         </script> 
 
         <script id="artists-template" type="application/xhtml+xml">
-            <h1>{{name}}</h1>
-            {{#items}}
-            <a href="{{url}}">{{name}}</a>
-            {{/items}}
+            <div>
+                <h1>{{name}}</h1>
+                {{#items}}
+                <a href="{{url}}">{{name}}</a>
+                {{/items}}
+            </div>
         </script> 
 
         <script id="collections-template" type="application/xhtml+xml">
-            <h1>{{name}}</h1>
-            {{#items}}
-            <a href="{{url}}">{{name}}</a>
-            {{/items}}
+            <div>
+                <h1>{{name}}</h1>
+                {{#items}}
+                <a href="{{url}}">{{name}}</a>
+                {{/items}}
+            </div>
         </script> 
 
         <script id="users-template" type="application/xhtml+xml">
-            <h1>{{name}}</h1>
-            {{#items}}
-            <a href="{{url}}">{{name}}</a>
-            {{/items}}
+            <div>
+                <h1>{{name}}</h1>
+                {{#items}}
+                <a href="{{url}}">{{name}}</a>
+                {{/items}}
+            </div>
         </script> 
 
         <script src="mp3.js"/>

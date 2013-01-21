@@ -1,0 +1,43 @@
+
+#browser {
+    /**/
+    border: solid 1px red;
+    /**/
+    position: absolute;
+    top: 4em;
+    bottom: 1em;
+    left: 1em;
+    right: 1em;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#browser .browser-scroll-x {
+    /**/
+    border: solid 1px purple;
+    /**/
+    height: 100%;
+}
+
+#browser .browser-scroll-y {
+    /**/
+    border: solid 1px green;
+    /**/
+    display: inline-block;
+    vertical-align: top;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#browser .browser-content {
+    /**/
+    border: solid 1px blue;
+    /**/
+}
+
+#browser div a {
+    display: block;
+    white-space: nowrap;
+    margin-right: 1em;
+}

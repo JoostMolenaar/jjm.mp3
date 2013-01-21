@@ -64,10 +64,27 @@ var Users = CollectionResource.extend({
 });
 
 /*
- * Base view types
+ * View base types
  */
 
-var ListView = Backbone.View.extend({
+var Template = Backbone.View.extend({
+    initialize: function() {
+        this.listenTo(this.model, "change", this.render);
+    },
+
+    render: function() {
+        var obj = this.format(this.model.toJSON());
+        var html = Mustache.render(this.template, obj);
+        this.$el.html(html);
+        return this;
+    },
+
+    format: function(obj) {
+        return obj;
+    }
+});
+
+var ListView = Template.extend({
     events: {
         "click a": "itemClicked"
     },
@@ -75,13 +92,6 @@ var ListView = Backbone.View.extend({
     initialize: function() {
         this.listenTo(this.model, "change", this.render);
         this.listenTo(this.model, "change:selected", this.changeSubview);
-    },
-
-    render: function() {
-        var obj = this.model.toJSON();
-        var html = Mustache.render(this.template, obj);
-        this.$el.html(html);
-        return this;
     },
 
     destroy: function() {
@@ -121,12 +131,20 @@ var ListView = Backbone.View.extend({
  * View types
  */
 
-var TrackDetails = Backbone.View.extend({
+var TrackDetails = Template.extend({
     el: "#track",
+    template: $("#track-template").html(),
 
     destroy: function() {
         this.$el.empty();
         this.stopListening();
+    },
+
+    format: function(obj) {
+        obj.year = !!obj.year ? { year: obj.year } : null;
+        obj.length = Math.floor(obj.length);
+        obj.bitrate = Math.floor(obj.bitrate / 1000)
+        return obj;
     }
 });
 
