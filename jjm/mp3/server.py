@@ -253,7 +253,7 @@ class TrackInfo(xhttp.Resource):
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
         document = {
-            "url": "/u/mp3/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track_num, track_name),
+            "url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track_num, track_name),
             "name": track.title,
             "artist": track.artist,
             "album": track.album,
