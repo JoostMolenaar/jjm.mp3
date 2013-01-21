@@ -8,6 +8,11 @@ var Resource = Backbone.Model.extend({
         return this.get("url");
     },
 
+    parse: function(obj) {
+        obj.loaded = true;
+        return obj;
+    },
+
     dump: function() {
         obj = this.toJSON();
         console && console.log && console.log(JSON.stringify(obj));
@@ -75,8 +80,18 @@ var Template = Backbone.View.extend({
     render: function() {
         var obj = this.format(this.model.toJSON());
         var html = Mustache.render(this.template, obj);
-        this.$el.html(html);
+        this.$el
+            .html(html)
+            .removeClass("invisible");
+        $("#browser").scrollLeft($("#browser").width()); // evil hack
         return this;
+    },
+
+    destroy: function() {
+        this.$el
+            .empty()
+            .addClass("invisible");
+        this.stopListening();
     },
 
     format: function(obj) {
@@ -98,8 +113,7 @@ var ListView = Template.extend({
         if (this.subview) {
             this.subview.destroy();
         }
-        this.$el.empty();
-        this.stopListening();
+        Template.prototype.destroy.call(this);
     },
 
     itemClicked: function(e) {
@@ -134,11 +148,6 @@ var ListView = Template.extend({
 var TrackDetails = Template.extend({
     el: "#track",
     template: $("#track-template").html(),
-
-    destroy: function() {
-        this.$el.empty();
-        this.stopListening();
-    },
 
     format: function(obj) {
         obj.year = !!obj.year ? { year: obj.year } : null;

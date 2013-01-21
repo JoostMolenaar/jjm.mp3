@@ -1,7 +1,16 @@
+body {
+    font-family: "segoe ui", "verdana", "sans-serif";
+}
+
+body a {
+    text-decoration: none;
+}
+
+body a:hover {
+    text-decoration: underline;
+}
+
 #browser {
-    /**/
-    border: solid 1px red;
-    /**/
     position: absolute;
     top: 4em;
     bottom: 1em;
@@ -12,32 +21,26 @@
     white-space: nowrap;
 }
 
-#browser .browser-scroll-x {
-    /**/
-    border: solid 1px purple;
-    /**/
-    height: 100%;
-}
-
 #browser .browser-scroll-y {
-    /**/
-    border: solid 1px green;
-    /**/
     display: inline-block;
     vertical-align: top;
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    background: #EEE;
 }
 
 #browser .browser-content {
-    /**/
-    border: solid 1px blue;
-    /**/
+    margin-left: 1em;
+    margin-right: 2em;
+    min-width: 10em;
 }
 
-#browser div a {
+#browser .browser-content.invisible {
+    display: none;
+}
+
+#browser .browser-content a {
     display: block;
     white-space: nowrap;
-    margin-right: 1em;
 }
