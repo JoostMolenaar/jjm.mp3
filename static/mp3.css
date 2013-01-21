@@ -1,4 +1,3 @@
-
 #browser {
     /**/
     border: solid 1px red;
@@ -10,6 +9,7 @@
     right: 1em;
     overflow-x: auto;
     overflow-y: hidden;
+    white-space: nowrap;
 }
 
 #browser .browser-scroll-x {
