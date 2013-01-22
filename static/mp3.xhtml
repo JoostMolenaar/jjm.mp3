@@ -17,11 +17,12 @@
     <body>
 
         <div id="controls">
+            <div id="library-button" class="button">Library</div> 
         </div>
 
-        <div id="browser">
+        <div id="browser" class="invisible">
             <div class="browser-scroll-y">
-                <div class="browser-content" id="users"/>
+                <div class="browser-content invisible" id="users"/>
             </div>
             <div class="browser-scroll-y">
                 <div class="browser-content invisible" id="collections"/>
@@ -74,16 +75,26 @@
             <div>
                 <h1>{{name}}</h1>
                 {{#items}}
-                <a href="{{url}}">{{name}}</a>
+                <div>
+                    <a href="{{url}}">{{name}}</a>
+                </div>
                 {{/items}}
             </div>
         </script> 
 
-        <script id="albums-template" type="application/xhtml+xml">
-            <div>
+        <script id="albums-template" type="template">
+            <div xmlns="">
                 <h1>{{name}}</h1>
                 {{#items}}
-                <a href="{{url}}">{{name}}</a>
+                <div>
+                    {{#cover_url}}
+                    <img src="{{cover_url}}" width="75" height="75"/>
+                    {{/cover_url}}
+                    {{^cover_url}}
+                    <div class="no-cover"/>
+                    {{/cover_url}}
+                    <a href="{{url}}">{{name}}</a>
+                </div>
                 {{/items}}
             </div>
         </script> 
@@ -92,7 +103,9 @@
             <div>
                 <h1>{{name}}</h1>
                 {{#items}}
-                <a href="{{url}}">{{name}}</a>
+                <div>
+                    <a href="{{url}}">{{name}}</a>
+                </div>
                 {{/items}}
             </div>
         </script> 
@@ -101,7 +114,9 @@
             <div>
                 <h1>{{name}}</h1>
                 {{#items}}
-                <a href="{{url}}">{{name}}</a>
+                <div>
+                    <a href="{{url}}">{{name}}</a>
+                </div>
                 {{/items}}
             </div>
         </script> 
@@ -110,7 +125,9 @@
             <div>
                 <h1>{{name}}</h1>
                 {{#items}}
-                <a href="{{url}}">{{name}}</a>
+                <div>
+                    <a href="{{url}}">{{name}}</a>
+                </div>
                 {{/items}}
             </div>
         </script> 

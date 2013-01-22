@@ -133,15 +133,22 @@ class Artist(xhttp.Resource):
     @xhttp.accept 
     def GET(self, req, username, collection_name, artist_name):
         try:
-            albums = self.users.resolve(username, collection_name, artist_name)
+            artist = self.users.resolve(username, collection_name, artist_name)
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
+        albums = artist.get_albums()
+        covers = { url: "/mp3/u/{0}/{1}/{2}/{3}.jpg?small=true".format(username, collection_name, artist_name, url) 
+                        if self.users.resolve(username, collection_name, artist_name, url).get_first_with_cover()
+                        else None
+                   for (_, url) in albums }
+
         document = { "url": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, artist_name),
-                     "name": albums[0].artist,
+                     "name": artist[0].artist,
                      "items": [ { "url": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, url), 
-                                  "name": name}
-                              for (name, url) in albums.get_albums() ] }
+                                  "name": name,
+                                  "cover_url": covers[url] }
+                                for (name, url) in albums ] }
 
         return {
             "x-status": xhttp.status.OK,
@@ -156,7 +163,7 @@ class Artist(xhttp.Resource):
                             ["ul"] + [ ["li", ["a", ("href", a["url"]), a["name"]]] for a in obj["items"] ]]]),
                 "text/plain": lambda obj: repr(obj) + "\n"
             },
-            "last-modified": xhttp.DateHeader(albums.get_mtime())
+            "last-modified": xhttp.DateHeader(artist.get_mtime())
         }
 
 class Album(xhttp.Resource):

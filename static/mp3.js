@@ -80,22 +80,27 @@ var Template = Backbone.View.extend({
     render: function() {
         var obj = this.format(this.model.toJSON());
         var html = Mustache.render(this.template, obj);
-        this.$el
-            .html(html)
-            .removeClass("invisible");
+        this.$el .html(html);
+        this.setVisible(true);
         $("#browser").scrollLeft($("#browser").width()); // evil hack
         return this;
     },
 
     destroy: function() {
-        this.$el
-            .empty()
-            .addClass("invisible");
+        this.$el .empty();
+        this.setVisible(false);
         this.stopListening();
     },
 
     format: function(obj) {
         return obj;
+    },
+
+    setVisible: function(visible) {
+        if (visible)
+            this.$el.removeClass("invisible");
+        else
+            this.$el.addClass("invisible");
     }
 });
 
@@ -172,7 +177,12 @@ var AlbumList = ListView.extend({
 var ArtistList = ListView.extend({
     el: "#artists",
     subviewType: AlbumList,
-    template: $("#artists-template").html()
+    template: $("#artists-template").html(),
+    
+    format: function(obj) {
+        obj.cover_url = obj.cover_url ? { cover_url: obj.cover_url } : null;
+        return obj
+    }
 });
 
 var CollectionList = ListView.extend({
@@ -187,6 +197,23 @@ var UserList = ListView.extend({
     template: $("#users-template").html()
 });
 
+var LibraryButton = Backbone.View.extend({
+    el: "#library-button",
+    state: false,
+    events: {
+        "click": "buttonClicked"
+    },
+    buttonClicked: function(e) {
+        this.state = !this.state;
+        if (this.state) {
+            $("#browser").removeClass("invisible");
+        }
+        else {
+            $("#browser").addClass("invisible");
+        }
+    }
+});
+
 /*
  * Application
  */
@@ -195,3 +222,6 @@ USERS = new Users({ "url": "/mp3/u/" })
 USERS.fetch();
 
 USERLIST = new UserList({ model: USERS });
+
+LIBRARYBUTTON = new LibraryButton();
+
