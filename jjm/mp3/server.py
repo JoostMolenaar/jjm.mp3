@@ -356,6 +356,7 @@ class MP3Server(xhttp.Router):
             (r"^/mp3/(.*\.css)$",                                   xhttp.FileServer("static", "text/css")),
             (r"^/mp3/(.*\.js)$",                                    xhttp.FileServer("static", "application/javascript")),
             (r"^/mp3/(.*\.xhtml)$",                                 xhttp.FileServer("static", "application/xhtml+xml")),
+            (r"^/mp3/(.*\.html)$",                                  xhttp.FileServer("static", "text/html")),
             (r"^/mp3/$",                                            xhttp.Redirector("/mp3/mp3.xhtml"))
         )
 

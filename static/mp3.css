@@ -10,11 +10,11 @@ body a:hover {
     text-decoration: underline;
 }
 
-.invisible {
+body .invisible {
     display: none;
 }
 
-#browser {
+body #browser {
     position: absolute; top: 4em; bottom: 1em; left: 1em; right: 1em;
     overflow-x: auto;
     overflow-y: hidden;
@@ -22,46 +22,111 @@ body a:hover {
     line-height: 1.5em;
 }
 
-#browser .browser-scroll-y {
+body #browser .browser-scroll-y {
     display: inline-block;
     vertical-align: top;
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    background: #EEE;
+    background: #eee;
 }
 
-#browser .browser-content {
+body #browser .browser-content {
     margin-left: 1em;
     margin-right: 2em;
     min-width: 10em;
 }
 
-#browser #albums .browser-content {
-    line-height: 75px;
+body #browser .browser-content#albums img {
+    vertical-align: middle;
 }
 
-#browser #albums .no-cover {
+body #browser .browser-content#albums .no-cover {
     display: inline-block;
     width: 75px;
     height: 75px;
-    background: #CCC;
+    background: #ccc;
+    vertical-align: middle;
 }
 
-#browser .browser-content {
-    white-space: nowrap;
+body #browser .browser-content div {
+    position: relative;
 }
 
-#controls {
-    position: absolute; top: 1em; left: 1em; right: 1em; height: 2em;
-    background: #EEE;
+body #browser .browser-content#albums {
+    margin-right: 6em;
 }
 
-#controls .button {
+body #browser .browser-content#tracks {
+    margin-right: 6em;
+}
+
+body #browser .browser-content .button {
+    background: #ddd;
+    display: inline-block;
+    padding: 0 1em;
+    position: absolute;
+    right: -5em;
+}
+
+body #browser .browser-content#albums .button {
+    top: 1.5em;
+}
+
+body #browser .browser-content .button:hover {
+    background: #ccc;
+    cursor: pointer;
+}
+
+body #controls {
+    position: absolute;
+    top: 1em; left: 1em; right: 1em; height: 2em;
+    background: #eee;
+    text-align: center;
+}
+
+body #controls .left {
+    display: inline-block;
+    position: absolute;
+    left: 0em;
+}
+
+body #controls .middle {
+    display: inline-block;
+}
+
+body #controls .right {
+    display: inline-block;
+    position: absolute;
+    right: 0em;
+}
+
+body #controls .button {
     display: inline-block;
     height: 100%;
-    background: #CCC;
+    background: #ddd;
     text-align: center;
     line-height: 2em;
     padding-left: 1em; padding-right: 1em;
+    position: relative;
 }
+
+body #controls .button:hover {
+    background: #ccc;
+    cursor: pointer;
+}
+
+body #controls .toggle-true:after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 1em; right: 1em; height: 3px;
+    background: #1fb2e8;
+}
+
+body #controls .toggle-false:after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 1em; right: 1em; height: 3px;
+    background: #bbb;
+}
+

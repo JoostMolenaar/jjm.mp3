@@ -10,129 +10,162 @@
         <script src="lib/backbone-0.9.9.js"/>
         <script src="lib/mustache-0.7.2.js"/>
 
-        <link rel="stylesheet" href="mp3.css"/>
+        <script src="mp3.js"/>
 
+        <link rel="stylesheet" href="mp3.css"/>
     </head>
 
     <body>
 
         <div id="controls">
-            <div id="library-button" class="button">Library</div> 
+            <div class="left">
+                <div id="library-button" class="button toggle-false">
+                    Library
+                </div>
+                <div id="prev-button" class="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+                         width="11" height="11" viewBox="0 0 120 120">
+                        <path d="M 0 0 L 0 120 H 30 V 0 H 0 z M 120 0 L 30 60 L 120 120 z" />
+                    </svg>
+                </div>
+                <div id="stop-button" class="button toggle-true">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+                         width="11" height="11" viewBox="0 0 120 120">
+                        <path d="M 0 0 L 0 120 H 120 V 0 H 0 z" />
+                    </svg>
+                </div>
+                <div id="play-button" class="button toggle-false">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+                         width="11" height="11" viewBox="0 0 120 120">
+                        <path d="M 0 120 L 120 60 L 0 0 V 120 z" />
+                    </svg>
+                </div>
+                <div id="pause-button" class="button toggle-false">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+                         width="11" height="11" viewBox="0 0 120 120">
+                        <path d="M 0 120 L 40 120 V 0 H 0 z M 80 120 L 120 120 V 0 H 80 z" />
+                    </svg>
+                </div>
+                <div id="next-button" class="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
+                         width="11" height="11" viewBox="0 0 120 120">
+                        <path d="M 0 0 L 0 120 L 90 60 z M 90 0 L 90 120 H 120 V 0 z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="right">
+                <div id="playlist-button" class="button toggle-false">
+                    Playlist
+                </div>
+            </div>
         </div>
 
         <div id="browser" class="invisible">
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="users"/>
+                <div class="browser-content" id="users"/>
             </div>
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="collections"/>
+                <div class="browser-content" id="collections"/>
             </div>
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="artists"/>
+                <div class="browser-content" id="artists"/>
             </div>
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="albums"/>
+                <div class="browser-content" id="albums"/>
             </div>
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="tracks"/>
+                <div class="browser-content" id="tracks"/>
             </div>
             <div class="browser-scroll-y">
-                <div class="browser-content invisible" id="track"/>
+                <div class="browser-content" id="track"/>
             </div>
         </div>
-
-        <script id="track-template" type="application/xhtml+xml">
-            <div>
-                <h1>{{name}}</h1>
-                <dl>
-                    <dt>Artist</dt>
-                    <dd>{{artist}}</dd>
-
-                    <dt>Album</dt>
-                    <dd>{{album}}</dd>
-
-                    <dt>Track</dt>
-                    <dd>{{track}}</dd>
-
-                    <dt>Title</dt>
-                    <dd>{{title}}</dd>
-
-                    {{#year}}
-                    <dt>Year</dt>
-                    <dd>{{year}}</dd>
-                    {{/year}}
-
-                    <dt>Length</dt>
-                    <dd>{{length}} s</dd>
-
-                    <dt>Bitrate</dt>
-                    <dd>{{bitrate}} kbps</dd>
-                </dl>
-            </div>
-        </script>
-
-        <script id="tracks-template" type="application/xhtml+xml">
-            <div>
-                <h1>{{name}}</h1>
-                {{#items}}
-                <div>
-                    <a href="{{url}}">{{name}}</a>
-                </div>
-                {{/items}}
-            </div>
-        </script> 
-
-        <script id="albums-template" type="template">
-            <div xmlns="">
-                <h1>{{name}}</h1>
-                {{#items}}
-                <div>
-                    {{#cover_url}}
-                    <img src="{{cover_url}}" width="75" height="75"/>
-                    {{/cover_url}}
-                    {{^cover_url}}
-                    <div class="no-cover"/>
-                    {{/cover_url}}
-                    <a href="{{url}}">{{name}}</a>
-                </div>
-                {{/items}}
-            </div>
-        </script> 
-
-        <script id="artists-template" type="application/xhtml+xml">
-            <div>
-                <h1>{{name}}</h1>
-                {{#items}}
-                <div>
-                    <a href="{{url}}">{{name}}</a>
-                </div>
-                {{/items}}
-            </div>
-        </script> 
-
-        <script id="collections-template" type="application/xhtml+xml">
-            <div>
-                <h1>{{name}}</h1>
-                {{#items}}
-                <div>
-                    <a href="{{url}}">{{name}}</a>
-                </div>
-                {{/items}}
-            </div>
-        </script> 
-
-        <script id="users-template" type="application/xhtml+xml">
-            <div>
-                <h1>{{name}}</h1>
-                {{#items}}
-                <div>
-                    <a href="{{url}}">{{name}}</a>
-                </div>
-                {{/items}}
-            </div>
-        </script> 
-
-        <script src="mp3.js"/>
     </body>
+    
+    <script id="track-template" type="application/xhtml+xml"><![CDATA[
+        <div>
+            <h1>{{name}}</h1>
+            <dl>
+                <dt>Artist</dt>
+                <dd>{{artist}}</dd>
+
+                <dt>Album</dt>
+                <dd>{{album}}</dd>
+
+                <dt>Track</dt>
+                <dd>{{track}}</dd>
+
+                <dt>Title</dt>
+                <dd>{{title}}</dd>
+
+                {{#year}}
+                <dt>Year</dt>
+                <dd>{{year}}</dd>
+                {{/year}}
+
+                <dt>Length</dt>
+                <dd>{{length}} s</dd>
+
+                <dt>Bitrate</dt>
+                <dd>{{bitrate}} kbps</dd>
+            </dl>
+        </div>
+    ]]></script>
+
+    <script id="tracks-template" type="application/xhtml+xml"><![CDATA[
+        <h1>{{name}}</h1>
+        <div class="item-container"/>
+    ]]></script>
+
+    <script id="track-item-template" type="application/xhtml+xml"><![CDATA[
+        <a href="{{url}}">{{name}}</a>
+        <div class="button">+</div>
+    ]]></script>
+
+    <script id="albums-template" type="application/xhtml+xml"><![CDATA[
+        <h1>{{name}}</h1>
+        <div class="item-container"/>
+    ]]></script> 
+
+    <script id="album-item-template" type="application/xhtml+xml"><![CDATA[
+        {{#cover_url}}
+        <img src="{{cover_url}}" width="75" height="75"/>
+        {{/cover_url}}
+        {{^cover_url}}
+        <div class="no-cover"/>
+        {{/cover_url}}
+        <a href="{{url}}">{{name}}</a>
+        <div class="button">+</div>
+    ]]></script>
+
+    <script id="artists-template" type="application/xhtml+xml"><![CDATA[
+        <h1>{{name}}</h1>
+        <div class="item-container"/>
+    ]]></script> 
+
+    <script id="artist-item-template" type="application/xhtml+xml"><![CDATA[
+        <a href="{{url}}">{{name}}</a>
+    ]]></script>
+
+    <script id="collections-template" type="application/xhtml+xml"><![CDATA[
+        <h1>{{name}}</h1>
+        <div class="item-container"/>
+    ]]></script> 
+
+    <script id="collection-item-template" type="application/xhtml+xml"><![CDATA[
+        <div>
+            <a href="{{url}}">{{name}}</a>
+        </div>
+    ]]></script>
+
+    <script id="users-template" type="application/xhtml+xml"><![CDATA[
+        <h1>{{name}}</h1>
+        <div class="item-container"/>
+    ]]></script>
+
+    <script id="user-item-template" type="application/xhtml+xml"><![CDATA[
+        <a href="{{url}}">{{name}}</a>
+    ]]></script>
 
 </html>

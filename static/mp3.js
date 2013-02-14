@@ -1,7 +1,7 @@
 
-/*
- * Model base types 
- */
+//
+// Model base types 
+//
 
 var Resource = Backbone.Model.extend({
     url: function() {
@@ -39,12 +39,15 @@ var CollectionResource = Resource.extend({
         var obj = Backbone.Model.prototype.toJSON.call(this);
         obj.items = obj.items.map(function(item) { return item.toJSON() });
         return obj;
+    },
+
+    setSelected: function(model) {
     }
 });
 
-/*
- * Model types
- */
+//
+// Model types
+//
 
 var Track = Resource.extend();
 
@@ -68,144 +71,158 @@ var Users = CollectionResource.extend({
     itemType: Backbone.Collection.extend({ model: Library })
 });
 
-/*
- * View base types
- */
+//
+// Base view types
+//
 
 var Template = Backbone.View.extend({
     initialize: function() {
+        this.template = $(this.template).text();
         this.listenTo(this.model, "change", this.render);
     },
-
     render: function() {
-        var obj = this.format(this.model.toJSON());
+        var obj = this.model.toJSON();
         var html = Mustache.render(this.template, obj);
-        this.$el .html(html);
-        this.setVisible(true);
-        $("#browser").scrollLeft($("#browser").width()); // evil hack
+        this.$el.html(html);
         return this;
     },
-
     destroy: function() {
-        this.$el .empty();
-        this.setVisible(false);
         this.stopListening();
-    },
-
-    format: function(obj) {
-        return obj;
-    },
-
-    setVisible: function(visible) {
-        if (visible)
-            this.$el.removeClass("invisible");
-        else
-            this.$el.addClass("invisible");
+        this.$el.empty();
     }
 });
 
 var ListView = Template.extend({
-    events: {
-        "click a": "itemClicked"
+    render: function() {
+        Template.prototype.render.call(this);
+        this.items = this.model.get("items").map(function(item) {
+            var itemView = new this.itemViewType({ model: item });
+            itemView.render();
+            this.listenTo(itemView, "selected", this.itemSelected);
+            return itemView;
+        }, this);
+        this.$el.find(".item-container").append(this.items.map(function(item) { return item.el; }));
     },
-
-    initialize: function() {
-        this.listenTo(this.model, "change", this.render);
-        this.listenTo(this.model, "change:selected", this.changeSubview);
+    itemSelected: function(model) {
+        if (this.nextView) 
+            this.nextView.destroy();
+        this.nextView = new this.nextViewType({ model: model });
+        if (model.get("loaded"))
+            model.trigger("change")
+        else
+            model.fetch();
     },
-
     destroy: function() {
-        if (this.subview) {
-            this.subview.destroy();
-        }
+        if (this.nextView)
+            this.nextView.destroy();
+        if (this.items)
+            this.items.forEach(function(item) { item.destroy(); });
         Template.prototype.destroy.call(this);
-    },
-
-    itemClicked: function(e) {
-        e.preventDefault();
-        var url = $(e.target).attr("href");
-        var model = this.model.get("items").find(function(item) { return item.get("url") == url; });
-        this.model.set("selected", null);
-        this.model.set("selected", model);
-    },
-
-    changeSubview: function() {
-        if (this.subview) {
-            this.subview.destroy();
-        }
-        var selected = this.model.get("selected");
-        if (selected) {
-            this.subview = new this.subviewType({ model: selected });
-            if (selected.get("loaded")) {
-                this.subview.render();
-            }
-            else {
-                selected.fetch();
-            }
-        }
     }
 });
 
-/*
- * View types
- */
-
-var TrackDetails = Template.extend({
-    el: "#track",
-    template: $("#track-template").html(),
-
-    format: function(obj) {
-        obj.year = !!obj.year ? { year: obj.year } : null;
-        obj.length = Math.floor(obj.length);
-        obj.bitrate = Math.floor(obj.bitrate / 1000)
-        return obj;
+var ListItem = Template.extend({
+    events: { "click a": "itemClicked" },
+    itemClicked: function(e) {
+        e.preventDefault();
+        this.trigger("selected", this.model);
     }
+});
+
+//
+// View types
+//
+
+var TrackInfo = Template.extend({
+    el: "#track",
+    template: "#track-template",
 });
 
 var TrackList = ListView.extend({
     el: "#tracks",
-    subviewType: TrackDetails,
-    template: $("#tracks-template").html()
+    template: "#tracks-template",
+    itemViewType: ListItem.extend({
+        template: "#track-item-template"
+    }),
+    nextViewType: TrackInfo
 });
 
 var AlbumList = ListView.extend({
     el: "#albums",
-    subviewType: TrackList,
-    template: $("#albums-template").html()
+    template: "#albums-template",
+    itemViewType: ListItem.extend({
+        template: "#album-item-template"
+    }),
+    nextViewType: TrackList
 });
 
 var ArtistList = ListView.extend({
     el: "#artists",
-    subviewType: AlbumList,
-    template: $("#artists-template").html(),
-    
-    format: function(obj) {
-        obj.cover_url = obj.cover_url ? { cover_url: obj.cover_url } : null;
-        return obj
-    }
+    template: "#artists-template",
+    itemViewType: ListItem.extend({
+        template: "#artist-item-template"
+    }),
+    nextViewType: AlbumList
 });
 
 var CollectionList = ListView.extend({
     el: "#collections",
-    subviewType: ArtistList,
-    template: $("#collections-template").html()
-});
+    template: "#collections-template",
+    itemViewType: ListItem.extend({ 
+        template: "#collection-item-template" 
+    }),
+    nextViewType: ArtistList
+})
 
 var UserList = ListView.extend({
     el: "#users",
-    subviewType: CollectionList,
-    template: $("#users-template").html()
+    template: "#users-template",
+    itemViewType: ListItem.extend({ 
+        template: "#user-item-template" 
+    }),
+    nextViewType: CollectionList
 });
 
-var LibraryButton = Backbone.View.extend({
-    el: "#library-button",
+//
+// ToggleButton
+//
+
+var ToggleButton = Backbone.View.extend({
     state: false,
     events: {
         "click": "buttonClicked"
     },
+    initialize: function() {
+        this.updateState();
+    },
     buttonClicked: function(e) {
         this.state = !this.state;
+        this.updateState();
+        this.trigger("toggled");
+    },
+    updateState: function() {
         if (this.state) {
+            this.$el.removeClass("toggle-false").addClass("toggle-true");
+        }
+        else {
+            this.$el.removeClass("toggle-true").addClass("toggle-false");
+        }
+    }
+});
+
+//
+// Controls
+//
+
+var Controls = Backbone.View.extend({
+    initialize: function() {
+        this.libraryButton = new ToggleButton({ el: "#library-button" });
+        this.playlistButton = new ToggleButton({ el: "#playlist-button" });
+        this.listenTo(this.libraryButton, "toggled", this.libraryToggled);
+        this.listenTo(this.playlistButton, "toggled", this.playlistToggled);
+    },
+    libraryToggled: function() {
+        if (this.libraryButton.state) {
             $("#browser").removeClass("invisible");
         }
         else {
@@ -218,10 +235,15 @@ var LibraryButton = Backbone.View.extend({
  * Application
  */
 
-USERS = new Users({ "url": "/mp3/u/" })
-USERS.fetch();
+Application = function() {
+    this.users = new Users({ url: "/mp3/u/" })
+    this.users.fetch();
 
-USERLIST = new UserList({ model: USERS });
+    this.userlist = new UserList({ model: this.users });
 
-LIBRARYBUTTON = new LibraryButton();
+    this.controls = new Controls();
+};
 
+$(document).ready(function(e) {
+    window.app = new Application();
+});
