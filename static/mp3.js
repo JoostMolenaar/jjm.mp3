@@ -36,6 +36,11 @@ MP3.Base.Resource = Backbone.Model.extend({
         obj.loaded = true;
         return obj;
     },
+    fetch: function() {
+        return this.get("loaded")
+            ? $.Deferred().resolveWith(null, null, null).promise()
+            : Backbone.Model.prototype.fetch.call(this);
+    },
     dump: function() {
         obj = this.toJSON();
         console && console.log && console.log(JSON.stringify(obj));
@@ -189,12 +194,11 @@ MP3.Views.AlbumList = MP3.Base.ListView.extend({
             });
         },
         add: function(e) {
-            var promise = this.model.get("loaded")
-                ? $.Deferred().resolveWith(null, null, null)
-                : this.model.fetch();
-            promise.done(function(data, textStatus, jqXHR) {
-                this.trigger("addAlbum", this.model);
-            }.bind(this));
+            this.model
+                .fetch()
+                .done(function() {
+                    this.trigger("addAlbum", this.model)
+                }.bind(this));
         }
     }),
     nextViewType: MP3.Views.TrackList
@@ -247,12 +251,13 @@ MP3.Components.Browser = Backbone.Class.extend({
         this.destroyAfter(listView);
         this.views.push(new listView.nextViewType({ model: model }));
         this.hookEvents(this.views.last().value());
-        if (model.get("loaded")) {
-            model.trigger("change");
-        }
-        else {
-            model.fetch();
-        }
+        model
+            .fetch()
+            .done(function(data, textStatus, jqXHR) {
+                if (!jqXHR) {
+                    model.trigger("change");
+                }
+            });
     },
     destroyAfter: function(listView) {
         var i = this.views.indexOf(listView).value();
