@@ -27,12 +27,15 @@ MP3.Base.Resource = Backbone.Model.extend({
     url: function() {
         return this.get("url");
     },
-
+    defaults: function() {
+        return {
+            loaded: false
+        };
+    },
     parse: function(obj) {
         obj.loaded = true;
         return obj;
     },
-
     dump: function() {
         obj = this.toJSON();
         console && console.log && console.log(JSON.stringify(obj));
@@ -45,16 +48,13 @@ MP3.Base.CollectionResource = MP3.Base.Resource.extend({
         return { 
             items: new this.itemType(),
             loaded: false,
-            selected: null
         };
     },
-
     parse: function(obj) {
         obj.items = new this.itemType(obj.items);
         obj.loaded = true;
         return obj;
     },
-
     toJSON: function() {
         var obj = Backbone.Model.prototype.toJSON.call(this);
         obj.items = obj.items.map(function(item) { return item.toJSON() });
@@ -118,26 +118,32 @@ MP3.Base.ListView = MP3.Base.Template.extend({
         this.items = this.model.get("items").map(function(item) {
             var itemView = new this.itemViewType({ model: item });
             itemView.render();
-            this.listenTo(itemView, "selected", this.itemSelected);
+            this.listenTo(itemView, "all", function() {
+                var args = _.initial(arguments, 0);
+                args.splice(1, 0, this);
+                this.trigger.apply(this, args);
+            });
             return itemView;
         }, this);
         this.$el.find(".item-container").append(this.items.map(function(item) { return item.el; }));
     },
-    itemSelected: function(model) {
-        this.trigger("selected", this, model);
-    },
     destroy: function() {
-        if (this.items)
+        if (this.items) {
             this.items.forEach(function(item) { item.destroy(); });
+        }
         MP3.Base.Template.prototype.destroy.call(this);
     }
 });
 
 MP3.Base.ListItem = MP3.Base.Template.extend({
-    events: { "click a": "itemClicked" },
+    events: function() {
+        return {
+            "click a": "itemClicked"
+        };
+    },
     itemClicked: function(e) {
         e.preventDefault();
-        this.trigger("selected", this.model);
+        this.trigger("select", this.model);
     }
 });
 
@@ -159,7 +165,15 @@ MP3.Views.TrackList = MP3.Base.ListView.extend({
     el: "#tracks",
     template: "#tracks-template",
     itemViewType: MP3.Base.ListItem.extend({
-        template: "#track-item-template"
+        template: "#track-item-template",
+        events: function() {
+            return _.extend(MP3.Base.ListItem.prototype.events.call(this), {
+                "click .button": "add"
+            });
+        },
+        add: function(e) {
+            this.trigger("addTrack", this.model);
+        }
     }),
     nextViewType: MP3.Views.TrackInfo
 });
@@ -168,7 +182,24 @@ MP3.Views.AlbumList = MP3.Base.ListView.extend({
     el: "#albums",
     template: "#albums-template",
     itemViewType: MP3.Base.ListItem.extend({
-        template: "#album-item-template"
+        template: "#album-item-template",
+        events: function() {
+            return _.extend(MP3.Base.ListItem.prototype.events.call(this), {
+                "click .button": "add"
+            });
+        },
+        add: function(e) {
+            if (! this.model.get("loaded")) {
+                this.model
+                    .fetch()
+                    .done(function(data, textStatus, jqXHR) {
+                        this.trigger("addAlbum", this.model);
+                    }.bind(this));
+            }
+            else {
+                this.trigger("addAlbum", this.model);
+            }
+        }
     }),
     nextViewType: MP3.Views.TrackList
 });
@@ -189,7 +220,7 @@ MP3.Views.CollectionList = MP3.Base.ListView.extend({
         template: "#collection-item-template" 
     }),
     nextViewType: MP3.Views.ArtistList
-})
+});
 
 MP3.Views.UserList = MP3.Base.ListView.extend({
     el: "#users",
@@ -198,6 +229,51 @@ MP3.Views.UserList = MP3.Base.ListView.extend({
         template: "#user-item-template" 
     }),
     nextViewType: MP3.Views.CollectionList
+});
+
+//
+// Browser
+//
+
+MP3.Components.Browser = Backbone.Class.extend({
+    constructor: function(users) {
+        this.views = _.chain([
+            new MP3.Views.UserList({ model: users }) 
+        ]);
+        this.hookEvents(this.views.first().value());
+    },
+    hookEvents: function(view) {
+        this.listenTo(view, "select", this.displayPanel);
+        this.listenTo(view, "addAlbum", this.addAlbum);
+        this.listenTo(view, "addTrack", this.addTrack);
+    },
+    displayPanel: function(listView, model) {
+        this.destroyAfter(listView);
+        this.views.push(new listView.nextViewType({ model: model }));
+        this.hookEvents(this.views.last().value());
+        if (model.get("loaded")) {
+            model.trigger("change");
+        }
+        else {
+            model.fetch();
+        }
+    },
+    destroyAfter: function(listView) {
+        var i = this.views.indexOf(listView).value();
+        this.views
+            .tail(i+1)
+            .each(function(view) {
+                this.stopListening(view);
+                view.destroy();
+            }, this);
+        this.views = this.views.head(i+1);
+    },
+    addAlbum: function(listView, model) {
+        console.log("addAlbum", model.toJSON());
+    },
+    addTrack: function(listView, model) {
+        console.log("addTrack", model.toJSON());
+    }
 });
 
 //
@@ -245,38 +321,6 @@ MP3.Components.Controls = Backbone.Class.extend({
         else {
             $("#browser").addClass("invisible");
         }
-    }
-});
-
-//
-// Browser
-//
-
-MP3.Components.Browser = Backbone.Class.extend({
-    constructor: function(users) {
-        this.views = _.chain([
-            new MP3.Views.UserList({ model: users }) 
-        ]);
-        this.listenTo(this.views.first().value(), "selected", this.displayPanel);
-    },
-    displayPanel: function(listView, model) {
-        this.destroyAfter(listView);
-        this.views.push(new listView.nextViewType({ model: model }));
-        this.listenTo(this.views.last().value(), "selected", this.displayPanel);
-        if (model.get("loaded"))
-            model.trigger("change");
-        else
-            model.fetch();
-    },
-    destroyAfter: function(listView) {
-        var i = this.views.indexOf(listView).value();
-        this.views
-            .tail(i+1)
-            .each(function(view) {
-                this.stopListening(view);
-                view.destroy();
-            }, this);
-        this.views = this.views.head(i+1);
     }
 });
 
