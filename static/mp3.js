@@ -189,16 +189,12 @@ MP3.Views.AlbumList = MP3.Base.ListView.extend({
             });
         },
         add: function(e) {
-            if (! this.model.get("loaded")) {
-                this.model
-                    .fetch()
-                    .done(function(data, textStatus, jqXHR) {
-                        this.trigger("addAlbum", this.model);
-                    }.bind(this));
-            }
-            else {
+            var promise = this.model.get("loaded")
+                ? $.Deferred().resolveWith(null, null, null)
+                : this.model.fetch();
+            promise.done(function(data, textStatus, jqXHR) {
                 this.trigger("addAlbum", this.model);
-            }
+            }.bind(this));
         }
     }),
     nextViewType: MP3.Views.TrackList
