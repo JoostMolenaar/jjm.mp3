@@ -14,15 +14,39 @@ body .invisible {
     display: none;
 }
 
-body #browser {
+body #main-panel {
     position: absolute; top: 4em; bottom: 1em; left: 1em; right: 1em;
+}
+
+body #main-panel #playlist {
+    display: none;
+    position: absolute; top: 0; bottom: 0; width: 20em; right: 0;
+    background: #eee;
+    overflow: auto;
+}
+
+body #main-panel #browser {
+    display: none;
+    position: absolute; top: 0; bottom: 0; left: 0; right: 0;
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
     line-height: 1.5em;
 }
 
-body #browser .browser-scroll-y {
+body #main-panel.playlist-visible #playlist {
+    display: block;
+}
+
+body #main-panel.browser-visible #browser {
+    display: block;
+}
+
+body #main-panel.browser-visible.playlist-visible #browser {
+    right: 21em;
+}
+
+body #main-panel #browser .browser-scroll-y {
     display: inline-block;
     vertical-align: top;
     height: 100%;
@@ -31,17 +55,17 @@ body #browser .browser-scroll-y {
     background: #eee;
 }
 
-body #browser .browser-content {
+body #main-panel #browser .browser-content {
     margin-left: 1em;
     margin-right: 2em;
     min-width: 10em;
 }
 
-body #browser .browser-content#albums img {
+body #main-panel #browser .browser-content#albums img {
     vertical-align: middle;
 }
 
-body #browser .browser-content#albums .no-cover {
+body #main-panel #browser .browser-content#albums .no-cover {
     display: inline-block;
     width: 75px;
     height: 75px;
@@ -49,19 +73,19 @@ body #browser .browser-content#albums .no-cover {
     vertical-align: middle;
 }
 
-body #browser .browser-content div {
+body #main-panel #browser .browser-content div {
     position: relative;
 }
 
-body #browser .browser-content#albums {
+body #main-panel #browser .browser-content#albums {
     margin-right: 6em;
 }
 
-body #browser .browser-content#tracks {
+body #main-panel #browser .browser-content#tracks {
     margin-right: 6em;
 }
 
-body #browser .browser-content .button {
+body #main-panel #browser .browser-content .button {
     background: #ddd;
     display: inline-block;
     padding: 0 1em;
@@ -69,11 +93,11 @@ body #browser .browser-content .button {
     right: -5em;
 }
 
-body #browser .browser-content#albums .button {
+body #main-panel #browser .browser-content#albums .button {
     top: 1.5em;
 }
 
-body #browser .browser-content .button:hover {
+body #main-panel #browser .browser-content .button:hover {
     background: #ccc;
     cursor: pointer;
 }

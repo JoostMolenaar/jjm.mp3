@@ -197,7 +197,13 @@ MP3.Views.AlbumList = MP3.Base.ListView.extend({
             this.model
                 .fetch()
                 .done(function() {
-                    this.trigger("addAlbum", this.model)
+                    //this.trigger("addAlbum", this.model)
+                    // TODO : add API support for eager loading instead of abusing deferreds like this
+                    $.when
+                        .apply(this, this.model.get("items").map(function(item) { return item.fetch(); }))
+                        .done(function() {
+                            this.trigger("addAlbum", this.model);
+                        }.bind(this));
                 }.bind(this));
         }
     }),
@@ -317,10 +323,18 @@ MP3.Components.Controls = Backbone.Class.extend({
     },
     libraryToggled: function() {
         if (this.libraryButton.state) {
-            $("#browser").removeClass("invisible");
+            $("#main-panel").addClass("browser-visible");
         }
         else {
-            $("#browser").addClass("invisible");
+            $("#main-panel").removeClass("browser-visible");
+        }
+    },
+    playlistToggled: function() {
+        if (this.playlistButton.state) {
+            $("#main-panel").addClass("playlist-visible");
+        }
+        else {
+            $("#main-panel").removeClass("playlist-visible");
         }
     }
 });
