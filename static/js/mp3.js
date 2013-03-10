@@ -197,8 +197,6 @@ MP3.Views.AlbumList = MP3.Base.ListView.extend({
             this.model
                 .fetch()
                 .done(function() {
-                    //this.trigger("addAlbum", this.model)
-                    // TODO : add API support for eager loading instead of abusing deferreds like this
                     $.when
                         .apply(this, this.model.get("items").map(function(item) { return item.fetch(); }))
                         .done(function() {
