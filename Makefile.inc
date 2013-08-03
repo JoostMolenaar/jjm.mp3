@@ -1,15 +1,17 @@
 NAME = mp3
 
-PIP_NAME = jjm.mp3
+PIP_NAME = mp3
 PIP_REQ = requirements.txt
 
-MAIN ?= jjm.mp3.server
+MAIN ?= mp3.server
 
 PKG_BASE = file:///home/joost/git
-PKG = jjm jjm.xhttp jjm.xml jjm.sh
+PKG = xhttp xmlist sh
 
 STATIC_DIRS = conf run static
 
-test-db: MAIN=jjm.mp3.db
+_test: test
+
+test-db: MAIN=mp3.db
 test-db: test
 

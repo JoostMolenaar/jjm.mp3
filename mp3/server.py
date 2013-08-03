@@ -4,8 +4,8 @@ import re
 import StringIO
 import zipfile
 
-from jjm import xhttp 
-from jjm import sh
+import xhttp 
+import sh
 
 from . import db
 

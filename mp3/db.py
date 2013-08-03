@@ -16,7 +16,7 @@ import Image as PIL
 
 from unidecode import unidecode
 
-import jjm.sh
+import sh
 
 # A Library contains zero or more Collection objects, which inherit from TrackList,
 # and which contain zero or more Track objects. TrackList allows filtering tracks by certain
@@ -240,7 +240,7 @@ class Collection(TrackList):
 
     @staticmethod
     def scan_files(path):
-        return jjm.sh.findf(path, '*.mp3')
+        return sh.findf(path, '*.mp3')
 
     @staticmethod
     def scan(path):
@@ -357,7 +357,7 @@ class Users(object):
         self.items = list(self.scan_users())
 
     def scan_users(self):
-        for fn in jjm.sh.findf(self.path, "*.json"):
+        for fn in sh.findf(self.path, "*.json"):
             obj = load_json(fn)
             if obj["_type"] == "LocalUser":
                 user = LocalUser.from_obj(obj)
