@@ -5,7 +5,6 @@ PIP_REQ = requirements.txt
 
 MAIN ?= mp3.server
 
-PKG_BASE = file:///home/joost/git
 PKG = xhttp xmlist sh
 
 STATIC_DIRS = conf run static
