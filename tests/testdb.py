@@ -1,9 +1,9 @@
 import unittest 
 import os.path
 
-import jjm.mp3.db
+import mp3.db
 
-jjm.mp3.db.QUIET = True
+mp3.db.QUIET = True
 
 FILENAME = "data/silence.mp3"
 
@@ -50,24 +50,24 @@ class TestTrack(unittest.TestCase):
         self.assertEqual(track.collection_url, 'foo')
    
     def test_from_file(self):
-        track = jjm.mp3.db.Track.from_file(FILENAME, collection="Foo", collection_url='foo')
+        track = mp3.db.Track.from_file(FILENAME, collection="Foo", collection_url='foo')
 
         self.assert_properties(track)
 
     def test_from_obj(self):
-        track = jjm.mp3.db.Track.from_obj(EXPECTED_OBJ(), collection='Foo', collection_url='foo')
+        track = mp3.db.Track.from_obj(EXPECTED_OBJ(), collection='Foo', collection_url='foo')
 
         self.assert_properties(track)
 
     def test_repr(self):
-        track = jjm.mp3.db.Track.from_file(FILENAME)
+        track = mp3.db.Track.from_file(FILENAME)
 
         r = repr(track)
 
         self.assertEqual(r, "silent-artist/silent-album/42-the-sound-of-silence.mp3")
 
     def test_obj(self):
-        track = jjm.mp3.db.Track.from_file(FILENAME)
+        track = mp3.db.Track.from_file(FILENAME)
 
         obj = track.obj()
 
@@ -78,7 +78,7 @@ class TestCollection(unittest.TestCase):
         self.maxDiff = None
 
     def test_scan(self):
-        collection = jjm.mp3.db.Collection.scan("data")
+        collection = mp3.db.Collection.scan("data")
 
         self.assertIsNotNone(collection)
 
@@ -88,20 +88,20 @@ class TestCollection(unittest.TestCase):
         self.assertGreater(len(collection.items), 0)
 
     def test_get_item(self):
-        collection = jjm.mp3.db.Collection.scan("data")
+        collection = mp3.db.Collection.scan("data")
 
         self.assertGreater(len(collection.items), 0)
         self.assertEqual(collection[0].fn, "data/silence.mp3")
 
     def test_repr(self):
-        collection = jjm.mp3.db.Collection.scan("data")
+        collection = mp3.db.Collection.scan("data")
 
         u = repr(collection)
 
         self.assertEqual(u, "<Collection \"data\" (1)>")
 
     def test_obj(self):
-        collection = jjm.mp3.db.Collection.scan("data")
+        collection = mp3.db.Collection.scan("data")
 
         obj = collection.obj()
 
@@ -114,14 +114,14 @@ class TestCollection(unittest.TestCase):
         })
 
     def test_from_obj(self):
-        collection = jjm.mp3.db.Collection.from_obj({
+        collection = mp3.db.Collection.from_obj({
             "path": "data",
             "tracks": [EXPECTED_OBJ()]
         })
         self.assertEqual(repr(collection), "<Collection \"data\" (1)>")
 
     def test_gets(self):
-        collection = jjm.mp3.db.Collection.from_obj({
+        collection = mp3.db.Collection.from_obj({
             "path": "data",
             "tracks": [EXPECTED_OBJ()]
         })
@@ -143,7 +143,7 @@ class TestLibrary(unittest.TestCase):
         self.maxDiff = None
 
     def test_obj(self):
-        library = jjm.mp3.db.Library()
+        library = mp3.db.Library()
         library.add("data")
 
         obj = library.obj()
@@ -155,7 +155,7 @@ class TestLibrary(unittest.TestCase):
         ])
 
     def test_from_obj(self):
-        library = jjm.mp3.db.Library.from_obj([
+        library = mp3.db.Library.from_obj([
             { "name": "data",
               "path": "data",
               "tracks": [EXPECTED_OBJ()] }
@@ -163,7 +163,7 @@ class TestLibrary(unittest.TestCase):
         self.assertEqual(repr(library), "<Library: [<Collection \"data\" (1)>]>")
 
     def test_get_by_name(self):
-        library = jjm.mp3.db.Library.from_obj([
+        library = mp3.db.Library.from_obj([
             { "name": "data",
               "path": "data",
               "tracks": [EXPECTED_OBJ()] }
@@ -182,6 +182,7 @@ class TestLibrary(unittest.TestCase):
             library.get_by_name_url("foo")
 
     def test_save_load(self):
-        library = jjm.mp3.db.Library()
+        library = mp3.db.Library()
         library.add("data")
         library.save("library.json")
+

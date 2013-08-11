@@ -1,6 +1,5 @@
 coverage
 mutagen==1.20
 python-dateutil
-pytz
 unidecode==0.04.9
 PIL==1.1.7
