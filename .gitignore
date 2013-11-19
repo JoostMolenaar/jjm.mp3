@@ -1,8 +1,12 @@
+__pycache
 *.pyc
 *.zip
-env
+env2*
+env3*
 dist
-.cache
+.cache2*
+.cache3*
 *.swp
 .coverage
 htmlcov
+MANIFEST

@@ -5,40 +5,13 @@
 
         <title>MP3 server</title>
 
-        <script src="lib/underscore-1.4.3.js"/>
-        <script src="lib/jquery-1.8.3.js"/>
-        <script src="lib/backbone-0.9.9.js"/>
-        <script src="lib/mustache-0.7.2.js"/>
+        <!--
+        <script src="lib/underscore-1.4.3.js"></script>
+        -->
 
-        <script src="js/main.js"/>
+        <script src="lib/jquery-2.0.3.js"></script>
 
-        <script src="js/mp3/base/Resource.js"/>
-        <script src="js/mp3/base/CollectionResource.js"/>
-
-        <script src="js/mp3/base/Template.js"/>
-        <script src="js/mp3/base/ListView.js"/>
-        <script src="js/mp3/base/ListItem.js"/>
-
-        <script src="js/mp3/base/ToggleButton.js"/>
-
-        <script src="js/mp3/models/Track.js"/>
-        <script src="js/mp3/models/Album.js"/>
-        <script src="js/mp3/models/Artist.js"/>
-        <script src="js/mp3/models/Collection.js"/>
-        <script src="js/mp3/models/Library.js"/>
-        <script src="js/mp3/models/Users.js"/>
-
-        <script src="js/mp3/views/TrackInfo.js"/>
-        <script src="js/mp3/views/TrackList.js"/>
-        <script src="js/mp3/views/AlbumList.js"/>
-        <script src="js/mp3/views/ArtistList.js"/>
-        <script src="js/mp3/views/CollectionList.js"/>
-        <script src="js/mp3/views/UserList.js"/>
-
-        <script src="js/mp3/components/Browser.js"/>
-        <script src="js/mp3/components/Controls.js"/>
-
-        <script src="js/mp3/Application.js"/>
+        <script src="mp3.js"></script>
 
         <link rel="stylesheet" href="mp3.css"/>
     </head>
@@ -56,19 +29,19 @@
                         <path d="M 0 0 L 0 120 H 30 V 0 H 0 z M 120 0 L 30 60 L 120 120 z" />
                     </svg>
                 </div>
-                <div id="stop-button" class="button toggle-true">
+                <div id="stopped-button" class="button toggle-true">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
                          width="11" height="11" viewBox="0 0 120 120">
                         <path d="M 0 0 L 0 120 H 120 V 0 H 0 z" />
                     </svg>
                 </div>
-                <div id="play-button" class="button toggle-false">
+                <div id="playing-button" class="button toggle-false">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
                          width="11" height="11" viewBox="0 0 120 120">
                         <path d="M 0 120 L 120 60 L 0 0 V 120 z" />
                     </svg>
                 </div>
-                <div id="pause-button" class="button toggle-false">
+                <div id="paused-button" class="button toggle-false">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" 
                          width="11" height="11" viewBox="0 0 120 120">
                         <path d="M 0 120 L 40 120 V 0 H 0 z M 80 120 L 120 120 V 0 H 80 z" />
@@ -92,22 +65,40 @@
         <div id="main-panel">
             <div id="browser">
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="users"/>
+                    <div class="browser-content" id="users">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="collections"/>
+                    <div class="browser-content" id="collections">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="artists"/>
+                    <div class="browser-content" id="artists">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="albums"/>
+                    <div class="browser-content" id="albums">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="tracks"/>
+                    <div class="browser-content" id="tracks">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
                 <div class="browser-scroll-y">
-                    <div class="browser-content" id="track"/>
+                    <div class="browser-content" id="track">
+                        <h1/>
+                        <div class="item-container"/>
+                    </div>
                 </div>
             </div>
 
@@ -191,12 +182,21 @@
         </div>
     ]]></script>
 
-    <script id="users-template" type="application/xhtml+xml"><![CDATA[
+    <script id="users-template" type="text/template">
         <h1>{{name}}</h1>
+        <div class="item-container"/>
+    </script>
+
+    <script id="user-item-template" type="application/xhtml+xml"><![CDATA[
+        <a href="{{url}}">{{name}}</a>
+    ]]></script>
+
+    <script id="users-template-2" type="text/template"><![CDATA[
+        <h1><%= name %></h1>
         <div class="item-container"/>
     ]]></script>
 
-    <script id="user-item-template" type="application/xhtml+xml"><![CDATA[
+    <script id="user-item-template-2" type="application/xhtml+xml"><![CDATA[
         <a href="{{url}}">{{name}}</a>
     ]]></script>
 
