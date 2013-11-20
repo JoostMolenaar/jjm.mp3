@@ -17,7 +17,7 @@ mp3.StateMachine = Object.extend({
         this._value = value;
         this.changed.trigger(this._value);
     },
-    hasState: function(states) {
+    hasValue: function(states) {
         return states.indexOf(this.value) > -1;
     }
 });

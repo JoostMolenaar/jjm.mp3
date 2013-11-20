@@ -59,44 +59,66 @@ mp3.viewmodel.Playlist = Object.extend({
     },
     findNext: function() {
         this._next = this.findFirstIndex(["idle"]);
-        //if (this.next && this.next.state.value == "idle") {
-        //    this.next.load();
-        //}
     },
     moveNext: function() {
         console.log("-> playlist", this.state.value, this._current, this._next, !this.current ? "null" : this.current.state.value, !this.next ? "null" : this.next.state.value);
+
         if (!this.next) {
             this.findNext();
         }
-        if (this.next && this.next.state.hasState(["idle"])) {
+
+        if (!this.current && this.next && this.next.state.hasValue(["idle"])) {
             this.next.load();
         }
-        if (!this.current || ["load","ready","play"].indexOf(this.current.state.value) == -1) {
+
+        if (!this.current || !this.current.state.hasValue(["load","ready","play","pause","stop"])) {
             this._current = this._next;
             this.findNext();
         }
-        if (this.current && !this.current.state.hasState(["load","ready"]) && this.next && this.next.state.hasState(["idle"])) {
+
+        switch (this.state.value) {
+            case "stopped":
+                if (this.current && this.current.state.hasValue(["play", "ready"])) {
+                    this.current.stop();
+                }
+                break;
+            case "playing":
+                if (this.current && this.current.state.value == "ready") {
+                    this.current.play();
+                }
+                break;
+            case "paused":
+                if (this.current && this.current.state.value == "play") {
+                    this.current.pause();
+                }
+                break;
+        }
+
+        if (this.current && !this.current.state.hasValue(["load","ready"]) && this.next && this.next.state.hasValue(["idle"])) {
             this.next.load();
         }
-        if (this.current) {
-            switch (this.state.value) {
-                case "stopped":
-                    if (this.current.state.value == "play") {
-                        this.current.stop();
-                    }
-                    break;
-                case "playing":
-                    if (this.current.state.value == "ready") {
-                        this.current.play();
-                    }
-                    break;
-                case "paused":
-                    if (this.current.state.value == "play") {
-                        this.current.pause();
-                    }
-                    break;
-            }
+
+        switch (this.state.value) {
+            case "playing":
+                var p1 = !this.current && !this.next;
+                var p2 = this.current && this.current.state.hasValue(["load","ready"]) && (!this.next || this.next.state.hasValue(["idle"]));
+                var p3 = this.current && this.current.state.hasValue(["play"]) && (!this.next || this.next.state.hasValue(["load","ready"]));
+                break;
+            case "paused":
+                var p1 = !this.current && !this.next;
+                var p2 = this.current && this.current.state.hasValue(["load","ready"]) && (!this.next || this.next.state.hasValue(["idle"]));
+                var p3 = this.current && this.current.state.hasValue(["pause"]) && (!this.next || this.next.state.hasValue(["load", "ready"]));
+                break;
+            case "stopped":
+                var p1 = !this.current && !this.next;
+                var p2 = this.current && this.current.state.hasValue(["load","ready"]) && (!this.next || this.next.state.hasValue(["idle"]));
+                var p3 = this.current && this.current.state.hasValue(["stop"]) && (!this.next || this.next.state.hasValue(["load", "ready"]));
+                break;
         }
+        if (!(p1 || p2 || p3)) {
+            console.error("illegal state combination:")
+        }
+
         console.log("<- playlist", this.state.value, this._current, this._next, !this.current ? "null" : this.current.state.value, !this.next ? "null" : this.next.state.value);
     }
 });

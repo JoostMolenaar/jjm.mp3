@@ -21,13 +21,18 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
         this.item.buffer = null;
     },
     play: function() {
-        this.item.source.start(0);
+        this.item.source.start(0, this.item.startAt);
+        this.item.startedAt = this.item.context.currentTime - this.item.startAt;
     },
     stop: function() {
-        this.item.source.stop(0);
+        if (this.item.source) {
+            this.item.source.stop(0);
+        }
+        this.item.startAt = 0;
     },
     pause: function() {
         this.item.source.stop(0);
+        this.item.startAt = this.item.context.currentTime - this.item.startedAt;
     },
     downloadArrayBuffer: function(url) {
         console.log(this.item.track.url, "(downloadArrayBuffer)");
@@ -65,10 +70,13 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
         this.item.source.buffer = this.item.buffer;
         this.item.source.connect(this.item.context.destination);
         this.item.source.onended = function(e) {
-            if (this.item.state.value != "pause") {
+            if (this.item.state.value == "play") {
                 this.item.state.value = "end";
             }
             this.unload();
+            if (this.item.state.hasValue(["pause","stop"])) {
+                this.createBufferSource(buffer);
+            }
         }.bind(this);
         this.item.state.value = "ready";
     },

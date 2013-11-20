@@ -8,15 +8,18 @@ mp3.model.PlaylistItem = Object.extend({
             "idle":  ["load"],
             "load":  ["ready", "error"],
             "ready": ["play", "error"],
-            "play":  ["end", "pause", "error"],
-            "pause": ["play"],
-            "error": ["end"],
-            "end":   []
+            "play":  ["end", "pause", "stop", "error"],
+            "pause": ["ready"],
+            "stop":  ["ready"],
+            "end":   ["idle"],
+            "error": [],
         }, "init");
         this.state.changed.listen(function(state) { 
             console.log(this.track.url, state); 
         }, this)
         this.state.value = "idle";
+        this.startedAt = null;
+        this.startAt = 0;
     },
     load: function() {
         var self = this;
@@ -40,6 +43,9 @@ mp3.model.PlaylistItem = Object.extend({
         this.strategy.play();
     },
     stop: function() {
+        if (this.state.value == "play") {
+            this.state.value = "stop";
+        }
         this.strategy.stop();
     },
     pause: function() {
