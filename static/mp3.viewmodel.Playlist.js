@@ -12,15 +12,19 @@ mp3.viewmodel.Playlist = Object.extend({
         this._current = -1;
         this._next = -1;
     },
-    _get_current: function() {
-        return (0 <= this._current) && (this._current < this.items.length)
-             ? this.items[this._current]
-             : null;
+    current: {
+        get: function() {
+            return (0 <= this._current) && (this._current < this.items.length)
+                 ? this.items[this._current]
+                 : null;
+        }
     },
-    _get_next: function() {
-        return (0 <= this._next) && (this._next < this.items.length)
-             ? this.items[this._next]
-             : null;
+    next: {
+        get: function() {
+            return (0 <= this._next) && (this._next < this.items.length)
+                 ? this.items[this._next]
+                 : null;
+        }
     },
     addTrack: function(track) {
         var item = new mp3.model.PlaylistItem(track, this.audio);

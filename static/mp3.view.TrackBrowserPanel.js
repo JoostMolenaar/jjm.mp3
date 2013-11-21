@@ -1,10 +1,11 @@
 mp3.view.TrackBrowserPanel = mp3.view.BrowserPanel.extend({
-    constructor: function() {
-        this.__super__.prototype.constructor.apply(this, arguments);
+    constructor: function(selector) {
+        this.__super__.prototype.constructor.call(this, selector);
     },
     addItem: function($container, item) {
         $("<div/>")
-            .append("<b>foo</b>");
+            .append("<b>foo</b>")
+            .appendTo($container);
     }
 });
 

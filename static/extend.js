@@ -1,22 +1,19 @@
-Function.prototype.extend = function(attrs, statics) {
+Function.prototype.extend = function(attrs) {
     var ctor = attrs.constructor;
     ctor.prototype = Object.create(this.prototype);
     ctor.prototype.constructor = ctor;
     ctor.prototype.__super__ = this;
     for (var key in attrs) {
-        var setter = /^_set_(.*)$/.exec(key)
-        var getter = /^_get_(.*)$/.exec(key)
-        if (setter) {
-            ctor.prototype.__defineSetter__(setter[1], attrs[key]);
-        } else if (getter) {
-            ctor.prototype.__defineGetter__(getter[1], attrs[key]);
-        } else {
+        var staticFunc = /^_static_(.*)$/.exec(key)
+        if (typeof attrs[key] == "object") {
+            Object.defineProperty(ctor.prototype, key, attrs[key]);
+        } 
+        else if (staticFunc) {
+            ctor[staticFunc[1]] = attrs[key];
+        } 
+        else {
             ctor.prototype[key] = attrs[key];
         }
-    }
-    statics = statics || {}
-    for (var key in statics) {
-        ctor[key] = statics[key];
     }
     return ctor;
 };

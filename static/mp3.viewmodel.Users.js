@@ -16,45 +16,57 @@ mp3.viewmodel.Users = Object.extend({
                 }.bind(this));
         }
     },
-    _get_users: function() { 
-        return this._users; 
+    users: {
+        get: function() {
+            return this._users; 
+        },
+        set: function(v) {
+            this._setValue("users", v);
+            this.collections = this.artists = this.albums = this.tracks = this.track = null;
+        }
     },
-    _set_users: function(v) {
-        this._setValue("users", v);
-        this.collections = this.artists = this.albums = this.tracks = this.track = null;
+    collections: {
+        get: function() {
+            return this._collections;
+        },
+        set: function(v) {
+            this._setValue("collections", v); 
+            this.artists = this.albums = this.tracks = this.track = null;
+        }
     },
-    _get_collections: function() { 
-        return this._collections;
+    artists: {
+        get: function() {
+            return this._artists;
+        },
+        set: function(v) {
+            this._setValue("artists", v);
+            this.albums = this.tracks = this.track = null;
+        }
     },
-    _set_collections: function(v) { 
-        this._setValue("collections", v); 
-        this.artists = this.albums = this.tracks = this.track = null;
+    albums: {
+        get: function() {
+            return this._albums;
+        },
+        set: function(v) {
+            this._setValue("albums", v);
+            this.tracks = this.track = null;
+        }
     },
-    _get_artists: function() {
-        return this._artists;
+    tracks: {
+        get: function() {
+            return this._tracks;
+        },
+        set: function(v) {
+            this._setValue("tracks", v);
+            this.track = null;
+        }
     },
-    _set_artists: function(v) {
-        this._setValue("artists", v);
-        this.albums = this.tracks = this.track = null;
-    },
-    _get_albums: function() {
-        return this._albums;
-    },
-    _set_albums: function(v) {
-        this._setValue("albums", v);
-        this.tracks = this.track = null;
-    },
-    _get_tracks: function() {
-        return this._tracks;
-    },
-    _set_tracks: function(v) {
-        this._setValue("tracks", v);
-        this.track = null;
-    },
-    _get_track: function() {
-        return this._track;
-    },
-    _set_track: function(v) {
-        this._setValue("track", v);
-    },
+    track: {
+        get: function() {
+            return this._track;
+        },
+        set: function(v) {
+            this._setValue("track", v);
+        }
+    }
 });

@@ -8,13 +8,15 @@ mp3.view.ToggleButton = Object.extend({
                 this.toggled.trigger(this.state);
             }.bind(this));
     },
-    _get_state: function() {
-        return this._state;
-    },
-    _set_state: function(state) {
-        this._state = state;
-        this.$button
-            .removeClass(state ? "toggle-false" : "toggle-true")
-            .addClass(state ? "toggle-true" : "toggle-false");
+    state: {
+        get: function() {
+            return this._state;
+        },
+        set: function(state) {
+            this._state = state;
+            this.$button
+                .removeClass(state ? "toggle-false" : "toggle-true")
+                .addClass(state ? "toggle-true" : "toggle-false");
+        }
     }
 });

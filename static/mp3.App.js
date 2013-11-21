@@ -40,9 +40,8 @@ mp3.App = Object.extend({
             state ? $("#main-panel").addClass("playlist-visible")
                   : $("#main-panel").removeClass("playlist-visible");
         }, this);
-    }
-}, {
-    launch: function() {
+    },
+    _static_launch: function() {
         app = new mp3.App();
     }
 });
