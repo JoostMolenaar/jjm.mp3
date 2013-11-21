@@ -18,6 +18,8 @@ mp3.App = Object.extend({
 
         this.playlistView = new mp3.view.Playlist("#playlist", this.playlist);
 
+        this.analysis = new mp3.view.Analysis("#analysis", this.playlist);
+
         // controls
         this.controlsViewModel = new mp3.viewmodel.Controls();
         this.controlsViewModel.propertyChanged.listen(function(name, state) {

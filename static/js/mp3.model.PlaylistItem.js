@@ -1,7 +1,7 @@
 mp3.model.PlaylistItem = Object.extend({
-    constructor: function(track, context) {
+    constructor: function(track, playlist) {
         this.track = track;
-        this.context = context;
+        this.playlist = playlist;
         this.buffer = this.source = null;
         this.state = new mp3.StateMachine({
             "init":  ["idle"],

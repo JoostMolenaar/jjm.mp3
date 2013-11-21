@@ -1,9 +1,21 @@
-var mp3 = {
-    model: {},
-    viewmodel: {},
-    view: {}
-};
-var app = null;
+/*
+ * globals
+ */
 
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var mp3 = {
+        model: {},
+        viewmodel: {},
+        view: {}
+    },
+    app = null;
+
+/*
+ * duck punches
+ */
+
+window.AudioContext = window.AudioContext 
+                   || window.webkitAudioContext;
+
+window.requestAnimationFrame = window.requestAnimationFrame
+                            || window.webkitRequestAnimationFrame;
 

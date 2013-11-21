@@ -1,14 +1,21 @@
 mp3.viewmodel.Playlist = Object.extend({
     constructor: function() {
         this.items = [];
-        this.audio = new AudioContext();
+
+        this.context = new AudioContext();
+        this.output = this.context.createAnalyser();
+        this.output.fftSize = 256;
+        this.output.connect(this.context.destination);
+
         this.trackAdded = new mp3.Event();
+
         this.state = new mp3.StateMachine({
             "stopped": ["playing"],
             "playing": ["stopped", "paused"],
             "paused" : ["stopped", "playing"] 
         }, "stopped");
         this.state.changed.listen(this.stateChanged, this);
+
         this._current = -1;
         this._next = -1;
     },
@@ -27,7 +34,7 @@ mp3.viewmodel.Playlist = Object.extend({
         }
     },
     addTrack: function(track) {
-        var item = new mp3.model.PlaylistItem(track, this.audio);
+        var item = new mp3.model.PlaylistItem(track, this);
         item.state.changed.listen(this.itemStateChanged.bind(this));
         this.items.push(item);
         this.trackAdded.trigger(item);

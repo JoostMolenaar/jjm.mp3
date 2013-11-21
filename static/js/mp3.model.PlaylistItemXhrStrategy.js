@@ -22,7 +22,7 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
     },
     play: function() {
         this.item.source.start(0, this.item.startAt);
-        this.item.startedAt = this.item.context.currentTime - this.item.startAt;
+        this.item.startedAt = this.item.playlist.context.currentTime - this.item.startAt;
     },
     stop: function() {
         if (this.item.source) {
@@ -32,7 +32,7 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
     },
     pause: function() {
         this.item.source.stop(0);
-        this.item.startAt = this.item.context.currentTime - this.item.startedAt;
+        this.item.startAt = this.item.playlist.context.currentTime - this.item.startedAt;
     },
     downloadArrayBuffer: function(url) {
         console.log(this.item.track.url, "(downloadArrayBuffer)");
@@ -56,7 +56,7 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
     decodeAudio: function(array) {
         console.log(this.item.track.url, "(decodeAudioData)");
         var deferred = $.Deferred();
-        this.item.context.decodeAudioData(array, function(buffer) {
+        this.item.playlist.context.decodeAudioData(array, function(buffer) {
             deferred.resolve(buffer);
         }, function() {
             deferred.reject("error from decodeAudioData");
@@ -66,9 +66,9 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
     createBufferSource: function(buffer) {
         console.log(this.item.track.url, "(createBufferSource)");
         this.item.buffer = buffer;
-        this.item.source = this.item.context.createBufferSource();
+        this.item.source = this.item.playlist.context.createBufferSource();
         this.item.source.buffer = this.item.buffer;
-        this.item.source.connect(this.item.context.destination);
+        this.item.source.connect(this.item.playlist.output);
         this.item.source.onended = function(e) {
             if (this.item.state.value == "play") {
                 this.item.state.value = "end";
@@ -79,5 +79,5 @@ mp3.model.PlaylistItemXhrStrategy = Object.extend({
             }
         }.bind(this);
         this.item.state.value = "ready";
-    },
+    }
 });

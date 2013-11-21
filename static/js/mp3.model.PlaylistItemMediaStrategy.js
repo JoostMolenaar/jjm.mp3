@@ -9,8 +9,8 @@ mp3.model.PlaylistItemMediaStrategy = Object.extend({
         this.item.audio.src = this.item.track.mp3_url;
         this.item.audio.load();
         this.item.audio.addEventListener("canplaythrough", function(e) {
-            this.item.source = this.item.context.createMediaElementSource(this.item.audio);
-            this.item.source.connect(this.item.context.destination);
+            this.item.source = this.item.playlist.context.createMediaElementSource(this.item.audio);
+            this.item.source.connect(this.item.playlist.output);
             this.item.state.value = "ready";
             deferred.resolve();
         }.bind(this));

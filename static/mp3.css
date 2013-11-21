@@ -21,7 +21,7 @@ body #main-panel {
 body #main-panel #playlist {
     display: none;
     position: absolute; top: 0; bottom: 0; width: 20em; right: 0;
-    background: #eee;
+    background: rgba(200,200,200,0.5);
     overflow: auto;
 }
 
@@ -52,7 +52,7 @@ body #main-panel #browser .browser-scroll-y {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    background: #eee;
+    background: rgba(200,200,200,0.5);
 }
 
 body #main-panel #browser .browser-content {
@@ -100,6 +100,16 @@ body #main-panel #browser .browser-content#albums .button {
 body #main-panel #browser .browser-content .button:hover {
     background: #ccc;
     cursor: pointer;
+}
+
+body #main-panel canvas#analysis {
+    position: absolute;
+    width: 100%;
+    height: 128px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
 }
 
 body #controls {
