@@ -7,9 +7,14 @@ mp3.view.Analysis = Object.extend({
 
         this.last = 0;
 
-        this.data = new Uint8Array(this.playlist.output.frequencyBinCount);
+        this.playlist.output.fftSize = 256;
+        this.size = this.playlist.output.frequencyBinCount;
+        this.data = new Uint8Array(this.size);
 
         this.animate = this.animate.bind(this);
+        this.drawLinear = this.drawLinear.bind(this);
+        this.drawLog1 = this.drawLog1.bind(this);
+        this.draw = this.drawLinear;
 
         this.frequency = 60;
 
@@ -33,13 +38,28 @@ mp3.view.Analysis = Object.extend({
             this.context.clearRect(0, 0, this.width, this.height);       
             this.context.putImageData(image, -1, 0);
 
-            for (var i = 0; i < this.playlist.output.frequencyBinCount; i++) {
-                var v = 255 - this.data[i];
-                this.context.fillStyle = "rgb(" + v + "," + v + "," + v + ")";
-                this.context.fillRect(this.width - 1, this.playlist.output.frequencyBinCount- i, 1, 1); 
-            };
+            this.draw();
         }
 
         window.requestAnimationFrame(this.animate);
+    },
+    drawLinear: function() {
+        for (var i = 0; i < this.size; i++) {
+            var v = 255 - this.data[i];
+            this.context.fillStyle = "rgb(" + v + "," + v + "," + v + ")";
+            this.context.fillRect(this.width - 1, this.height - i, 1, 1); 
+        };
+    },
+    drawLog1: function() {
+        for (var i = 0; i < this.size; i++) {
+            var v = 255 - this.data[i];
+            this.context.fillStyle = "rgb(" + v + "," + v + "," + v + ")";
+            var y1 = (Math.log(i+1) / Math.log(this.size+1) * this.size);
+            var y2 = (Math.log(i+2) / Math.log(this.size+2) * this.size);
+            this.context.fillRect(this.width - 1, this.height - y2, 1, y2 - y1 + 1);
+        };
+    },
+    drawLog2: function() {
     }
 });
+
