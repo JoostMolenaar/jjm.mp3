@@ -4,7 +4,6 @@ mp3.viewmodel.Playlist = Object.extend({
 
         this.context = new AudioContext();
         this.output = this.context.createAnalyser();
-        this.output.fftSize = 256;
         this.output.connect(this.context.destination);
 
         this.trackAdded = new mp3.Event();
