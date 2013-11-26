@@ -238,7 +238,7 @@ class AlbumCover(xhttp.Resource):
 
         return {
             "x-status": xhttp.status.OK,
-            "x-content": track.image_data_small if small else track.image_data,
+            "x-content": lambda: track.image_data_small if small else track.image_data,
             "content-type": track.image_type,
             "last-modified": xhttp.DateHeader(track.mtime)
         }
@@ -309,9 +309,13 @@ class MP3File(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
+        def content():
+            with open(track.fn, "rb") as f:
+                return f.read()
+
         return {
             "x-status": xhttp.status.OK,
-            "x-content": open(track.fn, "rb").read(),
+            "x-content": content,
             "content-type": "audio/mpeg",
             "last-modified": xhttp.DateHeader(track.mtime)
         }
@@ -383,7 +387,7 @@ class Application(MP3Server):
                 res = e.response()
                 for key in sorted(res.keys()):
                     if key == "x-content":
-                        print "<!{0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key]))
+                        print "<!{0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key] if hasattr(res[key], "__len__") else "?"))
                     else:
                         print "<!{0:20} : {1!r}".format(key, res[key])
             print
@@ -391,7 +395,7 @@ class Application(MP3Server):
         if self.debug:
             for key in sorted(res.keys()):
                 if key == "x-content":
-                    print "< {0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key]))
+                    print "< {0:20} : {1!r} ({2})".format(key, type(res[key]), len(res[key] if hasattr(res[key], "__len__") else "?"))
                 else:
                     print "< {0:20} : {1!r}".format(key, res[key])
             print
