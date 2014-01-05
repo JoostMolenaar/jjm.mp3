@@ -29,7 +29,9 @@ mp3.model.PlaylistItemMediaStrategy = Object.extend({
         this.item.audio.play();
     },
     stop: function() {
+        console.error("TODO: mp3.model.PlaylistItemMediaStrategy.stop");
     },
     pause: function() {
+        console.error("TODO: mp3.model.PlaylistItemMediaStrategy.pause");
     },
 });

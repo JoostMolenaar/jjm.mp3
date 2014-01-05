@@ -130,5 +130,28 @@ mp3.viewmodel.Playlist = Object.extend({
         }
 
         console.log("<- playlist", this.state.value, this._current, this._next, !this.current ? "null" : this.current.state.value, !this.next ? "null" : this.next.state.value);
+    },
+    checkStates: function() {
+        var idle = "idle",
+            load = "load",
+            ready = "ready",
+            play = "play",
+            pause = "pause",
+            stop = "stop";
+        var states = {
+                playing: [
+                    {curr: [null]       , next:[null]},
+                    {curr: [load,ready] , next:[null,idle]},
+                    {curr: [play]       , next:[null,load,ready]} ],
+                paused: [
+                    {curr: [null]       , next:[null]},
+                    {curr: [load,ready] , next:[null,idle]},
+                    {curr: [pause]      , next:[null,load,ready]} ],
+                stopped: [
+                    {curr: [null]       , next:[null]},
+                    {curr: [load,ready] , next:[null,idle]},
+                    {curr: [stop]       , next:[null,load,ready]} ] };
+        var getState = function(o) { return o ? o.state.value : null; };
+        //states[this.state.value].curr.contains(getState(this.current))
     }
 });

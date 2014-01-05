@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import hashlib 
+import hashlib
 import json
 import os.path
 import re
@@ -12,21 +12,22 @@ import mutagen
 import mutagen.id3
 import mutagen.mp3
 
-import Image as PIL
+import PIL.Image
 
 from unidecode import unidecode
 
 import sh
 
-# A Library contains zero or more Collection objects, which inherit from TrackList,
-# and which contain zero or more Track objects. TrackList allows filtering tracks by certain
-# properties of a track, such as artist and album.
+# A Library contains zero or more Collection objects, which inherit from
+# TrackList, and which contain zero or more Track objects. TrackList allows
+# filtering tracks by certain properties of a track, such as artist and album.
 
 mutagen.id3.pedantic = False
 
-__all__ = [ 'Track', 'TrackList', 'Library' ]
+__all__ = ['Track', 'TrackList', 'Library']
 
 QUIET = True
+
 
 def _clean_url(name, s="-"):
     name = name.lower()
@@ -37,9 +38,6 @@ def _clean_url(name, s="-"):
     name = re.sub(s + '$', '', name)
     return name
 
-#
-# Track
-#
 
 class Track(object):
     def __init__(self, fn, mtime, artist, album, track, title, **extra_props):
@@ -92,9 +90,9 @@ class Track(object):
 
         extra_props['bitrate'] = t.info.bitrate
         extra_props['length'] = t.info.length
-        try: 
-            if t.has_key('TDRC'): extra_props['year'] = str(t['TDRC'].text[0])
-            if t.has_key('TDRL'): extra_props['year'] = str(t['TDRL'].text[0])
+        try:
+            if 'TDRC' in t: extra_props['year'] = str(t['TDRC'].text[0])
+            if 'TDRL' in t: extra_props['year'] = str(t['TDRL'].text[0])
             extra_props['year'] = int(extra_props['year'])
         except:
             extra_props['year'] = None
@@ -108,7 +106,7 @@ class Track(object):
             extra_props['image_hash'] = None
             extra_props['image_size'] = None
 
-        return Track(fn, mtime, artist, album, track, title, **extra_props) 
+        return Track(fn, mtime, artist, album, track, title, **extra_props)
 
     @staticmethod
     def try_from_file(fn, **extra_props):
@@ -157,15 +155,12 @@ class Track(object):
     def image_data_small(self):
         data = StringIO.StringIO(self.image_data)
         result = StringIO.StringIO()
-        image = PIL.open(data)
-        thumb = image.resize((75, 75), PIL.ANTIALIAS)
+        image = PIL.Image.open(data)
+        thumb = image.resize((75, 75), PIL.Image.ANTIALIAS)
         thumb.save(result, 'jpeg')
         result.seek(0)
         return result.buf
 
-#
-# TrackList
-#
 
 class TrackList(object):
     def __init__(self, items=None):
@@ -185,7 +180,7 @@ class TrackList(object):
 
     def get_by_artist_url(self, artist_url):
         result = (track for track in self.items if track.artist_url == artist_url)
-        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track))) 
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
 
     def get_by_album(self, album):
         result = (track for track in self.items if track.album == album)
@@ -214,15 +209,12 @@ class TrackList(object):
         return max(track.mtime for track in self.items)
 
     def get_first_with_cover(self):
-        result = (track for track in self.items if track.image_type) 
+        result = (track for track in self.items if track.image_type)
         try:
             return next(result)
         except StopIteration:
             return None
 
-#
-# Collection
-#
 
 class Collection(TrackList):
     def __init__(self, path, files_generator, **extra_props):
@@ -244,9 +236,9 @@ class Collection(TrackList):
 
     @staticmethod
     def scan(path):
-        files_gen = lambda self: (Track.try_from_file(fn, library=self.name, library_url=self.name_url) 
+        files_gen = lambda self: (Track.try_from_file(fn, library=self.name, library_url=self.name_url)
                                   for fn in Collection.scan_files(path))
-        return Collection(path, files_gen) 
+        return Collection(path, files_gen)
 
     def obj(self):
         return {
@@ -257,7 +249,7 @@ class Collection(TrackList):
 
     @staticmethod
     def from_obj(obj, **extra_props):
-        files_gen = lambda self: (Track.from_obj(track, library=self.name, library_url=self.name_url) 
+        files_gen = lambda self: (Track.from_obj(track, library=self.name, library_url=self.name_url)
                                   for track in obj['tracks'])
         result = Collection(obj['path'], files_gen)
         result.__dict__.update(extra_props)
@@ -268,12 +260,12 @@ class Collection(TrackList):
                   for fn in Collection.scan_files(self.path) }
 
         remove = [ i for (i, track) in enumerate(self.items)
-                   if (track.fn not in files) 
+                   if (track.fn not in files)
                    or (track.mtime != files[track.fn]) ]
 
         for i in remove[::-1]:
             del self.items[i]
-                
+
         current = { track.fn for track in self.items }
         add = [ Track.try_from_file(fn) for fn in files if fn not in current ]
         add = [ track for track in add if track ]
@@ -281,9 +273,6 @@ class Collection(TrackList):
         self.items += add
         self.items = sorted(self.items, key=lambda t: (t.artist, t.album, t.track))
 
-#
-# Library 
-#
 
 class Library(object):
     def __init__(self, items=None):
@@ -293,7 +282,7 @@ class Library(object):
         return "<Library: {0!r}>".format(self.items)
 
     def obj(self):
-        return [ collection.obj() for collection in self.items ] 
+        return [ collection.obj() for collection in self.items ]
 
     @staticmethod
     def from_obj(obj):
@@ -323,9 +312,6 @@ class Library(object):
     def get_mtime(self):
         return max(collection.get_mtime() for collection in self.items)
 
-#
-# LocalUser
-#
 
 class LocalUser(object):
     def __init__(self, name, library):
@@ -347,9 +333,6 @@ class LocalUser(object):
     def from_obj(cls, obj):
         return cls(obj["name"], Library.from_obj(obj["library"]))
 
-#
-# Users
-#
 
 class Users(object):
     def __init__(self, path):
@@ -383,31 +366,40 @@ class Users(object):
 
     def resolve(self, *args):
         args = list(args)
-      
-        result = self.get_by_name_url(args.pop(0)) # -> User
-        if not args: return result
 
-        result = result.library.get_by_name_url(args.pop(0)) # -> Collection
-        if not args: return result
+        result = self.get_by_name_url(args.pop(0))  # -> User
+        if not args:
+            return result
+
+        result = result.library.get_by_name_url(args.pop(0))  # -> Collection
+        if not args:
+            return result
 
         artist_url = args.pop(0)
-        result = result.get_by_artist_url(artist_url) # -> TrackList (artist_url)
-        if not result.items: raise KeyError(artist_url)
-        if not args: return result
+        result = result.get_by_artist_url(artist_url)  # -> TrackList (artist_url)
+        if not result.items:
+            raise KeyError(artist_url)
+        if not args:
+            return result
 
         album_url = args.pop(0)
-        result = result.get_by_album_url(album_url) # -> TrackList (album_url)
-        if not result.items: raise KeyError(album_url)
-        if not args: return result
+        result = result.get_by_album_url(album_url)  # -> TrackList (album_url)
+        if not result.items:
+            raise KeyError(album_url)
+        if not args:
+            return result
 
-        result = result.get_by_track_num(args.pop(0)) # -> Track
-        if not args: return result
+        result = result.get_by_track_num(args.pop(0))  # -> Track
+        if not args:
+            return result
 
         title_url = args.pop(0)
-        if result.title_url != title_url: raise KeyError(title_url)
-        if not args: return result
+        if result.title_url != title_url:
+            raise KeyError(title_url)
+        if not args:
+            return result
 
-        raise Exception("Leftover arguments: {0!r}".format(args)) 
+        raise Exception("Leftover arguments: {0!r}".format(args))
 
 #
 # json helper functions
@@ -416,12 +408,13 @@ class Users(object):
 obj_to_json = lambda o: json.dumps(o, sort_keys=True, indent=4, encoding='utf8')
 json_to_obj = lambda s: json.loads(s, encoding='utf8')
 
+
 def load_json(fn):
     with open(fn, 'r') as f:
         return json_to_obj(f.read())
+
 
 def save_json(fn, obj):
     with open(fn, 'w') as f:
         f.write(obj_to_json(obj))
         f.write('\n')
-

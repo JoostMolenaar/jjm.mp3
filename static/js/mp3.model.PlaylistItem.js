@@ -27,8 +27,7 @@ mp3.model.PlaylistItem = Object.extend({
         this.track
             .fetch()
             .then(function() {
-                // XXX Audio element doesn't like being queued for > 1 minute, so use buffer
-                self.strategy = self.track.length < 60 || true 
+                self.strategy = self.track.length < 60 
                     ? new mp3.model.PlaylistItemXhrStrategy(self)
                     : new mp3.model.PlaylistItemMediaStrategy(self);
                 return self.strategy.load();
