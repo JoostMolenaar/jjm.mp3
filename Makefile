@@ -1,13 +1,6 @@
-NAME = mp3
-
-PIP_NAME = mp3
-PIP_REQ = requirements.txt
-
 MAIN ?= mp3.main
 
-PKG = core sh
-
-STATIC_DIRS = conf web run
+export MP3_JSON = web/mp3.json
 
 _test: test
 
