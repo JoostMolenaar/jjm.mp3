@@ -3,10 +3,10 @@ from distutils.core import setup
 setup(
     author='Joost Molenaar',
     author_email='j.j.molenaar@gmail.com',
-    name='jjm.mp3',
-    packages=['jjm.mp3'],
-    url='https://github.com/JoostMolenaar/jjm.mp3',
-    version='0.1.0'
+    name='mp3',
+    packages=['mp3'],
+    version='0.1.0',
+    url='http://github.com/j0057/mp3'
 )
 
 
