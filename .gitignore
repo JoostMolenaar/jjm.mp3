@@ -1,10 +1,7 @@
+env27
 *.pyc
-*.zip
-env2*
-env3*
-.cache2*
-.cache3*
-dist
-MANIFEST
-tests
+MANIFEST.in
+Makefile.in
+requirements.txt
+*.egg-info
 *.swp
