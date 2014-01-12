@@ -1,45 +1,15 @@
+NAME = mp3
 
-# PKG = pkgname
-# LIB = dist/lib1.zip dist/lib2.zip
-# PKG = env/pip-pkg1
+PIP_NAME = jjm.mp3
+PIP_REQ = requirements.txt
 
-.PHONY: clean really-clean test 
+MAIN ?= jjm.mp3.main
 
-PP = $(LIB: =:)
+PKG_BASE = file:///home/joost/git
+PKG = jjm jjm.core jjm.sh
 
-all: dist/$(NAME).zip $(LIB)
+STATIC_DIRS = conf web run
 
-clean: $(CLEAN)
-	@rm -rfv dist
-	@find py -name '*.pyc' -exec rm -v '{}' ';'
-
-clean-%:
-	@make -C lib/$* clean
-
-really-clean: clean
-	@rm -rf env/*
-	@rm -rfv env
-
-env:
-	virtualenv env
-
-env/pip-%: env
-	@echo "pip install $*"
-	@bash -c ". env/bin/activate ; pip install $*"
-	@touch env/pip-$*
-
-dist:
-	@mkdir -vp dist
-	@mkdir -vp dist/lib
-
-dist/%.zip: dist py/%/*.py
-	cd py ; zip -r ../dist/$*.zip $*/*.py
-
-dist/lib/%.zip: dist
-	@make -C lib/$* dist/$*.zip
-	@cp -v lib/$*/dist/$*.zip dist/lib/$*.zip
-
-test: env env/pip-webob $(LIB)
-	@echo "PYTHONPATH=$(PP) python py/$(NAME)/__init__.py"
-	@bash -c ". env/bin/activate ; PYTHONPATH=$(PP) python py/$(NAME)/__init__.py"
+test-db: MAIN=jjm.mp3.db
+test-db: test
 

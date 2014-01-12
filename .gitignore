@@ -1,4 +1,7 @@
 *.pyc
 *.zip
 env
+dist
+.cache
+*.swp
 

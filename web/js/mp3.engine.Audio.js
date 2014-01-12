@@ -5,9 +5,9 @@ mp3.engine.Audio = function(id, target) {
 };
 
 /*
-https://developer.mozilla.org/en/using_audio_and_video_in_firefox
-http://dev.w3.org/html5/spec/video.html#audio
-*/
+ * https://developer.mozilla.org/en/using_audio_and_video_in_firefox
+ * http://dev.w3.org/html5/spec/video.html#audio
+ */
 
 mp3.engine.Audio.extend(mp3.engine.Base, {
     CLASSNAME: 'mp3.engine.Audio',
@@ -81,7 +81,7 @@ mp3.engine.Audio.extend(mp3.engine.Base, {
         var freq = 1000/10;
         window.setTimeout(function(e) {
             this.timeChanged.notify();
-            if (this.timeLoaded >= this.timeTotal) {
+            if ((this.timeLoaded >= this.timeTotal) && (this.timeCurrent >= (this.timeTotal - 30))) {
                 this.log('{0} fullyLoaded'.format(this.id));
                 this.fullyLoaded.notify();
             } else {

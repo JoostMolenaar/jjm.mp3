@@ -10,7 +10,7 @@ import webob.exc
 import mutagen
 import mutagen.mp3
 
-import core
+from jjm import core
 
 class authorized(core.BaseDecorator):
     def __init__(self, func):
@@ -111,7 +111,6 @@ class TrackInfo(core.Resource):
             'cover':mime}
 
 class TrackCover(core.Resource):
-    #authorized
     @core.transformer
     def GET(self, request, artist, album, track, title):
         filename = MODEL.library.library[artist][album][track]['fn'].encode('utf8')
@@ -122,7 +121,6 @@ class TrackCover(core.Resource):
             return 404, 'text/plain', 'No cover'
 
 class TrackDownload(core.Resource):
-    #authorized
     @core.partial
     def GET(self, request, artist, album, track, title):
         filename = MODEL.library.library[artist][album][track]['fn'].encode('utf8')
@@ -130,10 +128,10 @@ class TrackDownload(core.Resource):
         response = webob.Response(content_type='audio/mpeg')
         response.body_stream = open(filename, 'rb')
         response.content_length = filesize
+        #response.headers['X-Accel-Limit-Rate'] = str(50 * 1024);
         return response
 
 class AlbumDownload(core.Resource):
-    #authorized
     @core.partial
     @core.cached(8)
     def GET(self, request, artist, album):
