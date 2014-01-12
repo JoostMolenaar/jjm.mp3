@@ -12,7 +12,7 @@ setup(
     author_email='j.j.molenaar@gmail.com',
     url='https://github.com/j0057/mp3',
     name='mp3',
-    version='0.1.0',
+    version='0.2.0',
     packages=['mp3'],
     data_files=[ (root, map(lambda f: root + '/' + f, files))
                  for src_dir in static_dirs
