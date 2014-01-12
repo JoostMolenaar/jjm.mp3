@@ -111,7 +111,9 @@ unlink-pkg-%:
 
 # code
 
-deploy-code: $(ENV)/.pkg-$(PIP_NAME)
+deploy-code:
+	$(ENV)/bin/pip install --no-index --find-links=$(WHL) --use-wheel --upgrade $(PIP_NAME)==$(PIP_VERSION) $(QUIET)
+	@touch $(ENV)/.pkg-$(PIP_NAME)
 
 undeploy-code: undeploy-pkg-$(PIP_NAME)
 
@@ -151,12 +153,10 @@ download: $(ENV) $(PIP_REQ)
 MANIFEST.in: setup.py | $(ENV)
 	$(ENV)/bin/python ./setup.py -q metadata --key=x_static_dirs | sed 's/^/recursive-include / ; s/$$/ *.*/' > MANIFEST.in
 
-release: $(ENV) MANIFEST.in release-pkg-$(PIP_NAME) 
-
-release-pkg-%:
-	rm -f $(WHL)/$*-$(shell $(PKG_BASE)/$*/setup.py --version)-*.whl
-	cd $(PKG_BASE)/$* ; ./setup.py sdist --dist-dir=$(WHL) $(QUIET) 1>/dev/null 2>&1 
-	$(ENV)/bin/pip wheel --no-index --find-links=$(WHL) --use-wheel --wheel-dir=$(WHL) $* $(QUIET)
+release: $(ENV)
+	rm -f $(WHL)/$(PIP_NAME)-$(PIP_VERSION)-*.whl
+	./setup.py sdist --dist-dir=$(WHL) $(QUIET) 1>/dev/null 2>&1
+	$(ENV)/bin/pip wheel --no-index --find-links=$(WHL) --use-wheel --wheel-dir=$(WHL) $(PIP_NAME)==$(PIP_VERSION) $(QUIET)
 
 #
 # clean
@@ -196,7 +196,8 @@ Makefile.in: setup.py
 	@echo generating Makefile.in from setup.py
 	@echo "PKG_BASE = $(shell readlink -f ..)" > Makefile.in
 	@echo "PIP_REQ = requirements.txt" >> Makefile.in
-	@echo "PIP_NAME = $(shell ./setup.py --q metadata -k name)" >> Makefile.in
+	@echo "PIP_NAME = $(shell ./setup.py -q metadata -k name)" >> Makefile.in
+	@echo "PIP_VERSION = $(shell ./setup.py -q metadata -k version)" >> Makefile.in
 	@echo "PKG = $(shell ./setup.py -q metadata -k x_repo_names)" >> Makefile.in
 	@echo "STATIC_DIRS = $(shell ./setup.py -q metadata -k x_static_dirs)" >> Makefile.in
 
