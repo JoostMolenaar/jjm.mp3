@@ -2,7 +2,7 @@
 
 repo_names = ['core', 'sh']
 dist_names = ['mutagen', 'unidecode']
-static_dirs = ['conf', 'run', 'static']
+static_dirs = ['conf', 'web']
 
 import os
 from setuptools import setup

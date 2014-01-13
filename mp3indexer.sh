@@ -10,6 +10,6 @@ else
         echo "Error: No directory specified as first argument"
         exit 1
     fi
-	eval "../env/bin/python -m mp3.indexer $1" > $outfile.tmp || exit 1
+	eval "../env27/bin/python -m mp3.indexer $1" > $outfile.tmp || exit 1
 	mv $outfile.tmp $outfile
 fi
