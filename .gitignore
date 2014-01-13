@@ -1,8 +1,9 @@
-*.pyc
 env27
 .coverage27
 htmlcov27
-*.egg-info
-Makefile.in
+*.pyc
 MANIFEST.in
+Makefile.in
+requirements.txt
+*.egg-info
 *.swp
