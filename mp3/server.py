@@ -11,12 +11,13 @@ from . import db
 
 XHTML = "http://www.w3.org/1999/xhtml"
 
-print 'env': os.environ
-print 'cwd': os.getcwd()
-
 PREFIX = os.environ.get("MP3_PREFIX", "/mp3")
 
 format_url = lambda s, *a: PREFIX + s.format(*a)
+
+print '# ENV:', '; '.join('{0}={1}'.format(k, v) for (k, v) in os.environ.items())
+print '# CWD:', os.getcwd()
+print '# PFX:', PREFIX
 
 class Users(xhttp.Resource):
     def __init__(self, users):
