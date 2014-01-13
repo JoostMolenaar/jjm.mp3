@@ -1,0 +1,20 @@
+#!/bin/bash
+
+cd .. ; unset GIT_DIR GIT_WORK_TREE
+
+while read oldrev newrev refname; do
+    if git show-ref --quiet --verify $refname-config; then
+        master="$(git rev-parse --abbrev-ref $refname)"
+	config="$(git rev-parse --abbrev-ref $refname-config)"
+        current="$(git rev-parse --abbrev-ref HEAD)"
+
+        if [ "$current" != "$config" ]; then
+            git checkout $config
+        fi
+
+        git rebase $master
+        make release deploy
+    else
+        echo "Not deploying -- no local branch $refname-config found"
+    fi
+done
