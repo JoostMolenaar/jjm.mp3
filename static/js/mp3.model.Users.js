@@ -2,7 +2,7 @@ mp3.model.Users = Object.extend({
     constructor: function() {
         this.users = {
             name: "Users",
-            url: "/mp3/u/",
+            url: "u/",
             loaded: false,
             fetch: this._fetch
         };

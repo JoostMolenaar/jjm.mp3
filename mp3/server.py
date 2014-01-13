@@ -11,6 +11,10 @@ from . import db
 
 XHTML = "http://www.w3.org/1999/xhtml"
 
+PREFIX = os.environ.get("MP3_PREFIX", "/mp3")
+
+format_url = lambda s, *a: PREFIX + s.format(*a)
+
 class Users(xhttp.Resource):
     def __init__(self, users):
         self.users = users 
@@ -18,9 +22,9 @@ class Users(xhttp.Resource):
     @xhttp.accept_charset
     @xhttp.accept
     def GET(self, req):
-        document = { "url": "/mp3/u/",
+        document = { "url": format_url("/u/"),
                      "name": "Users",
-                     "items": [ { "url": "/mp3/u/{0}/".format(user.name_url),
+                     "items": [ { "url": format_url("/u/{0}/", user.name_url),
                                   "name": user.name }
                                 for user in self.users.items ] }
         return {
@@ -54,9 +58,9 @@ class Library(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = { "url": "/mp3/u/{0}/".format(username),
+        document = { "url": format_url("/u/{0}/", username),
                      "name": user.name,
-                     "items": [ { "url": "/mp3/u/{0}/{1}/".format(username, collection.name_url),
+                     "items": [ { "url": format_url("/u/{0}/{1}/", username, collection.name_url),
                                   "name": collection.name }
                                 for collection in user.library.items ] }
         return {
@@ -80,7 +84,7 @@ class Library(xhttp.Resource):
         user = self.users.get_by_name_url(username)
         collection = user.library.add(req["x-post"]["path"])
         self.users.save()
-        location = "/mp3/u/{0}/{1}/".format(username, collection.name_url)
+        location = format_url("/u/{0}/{1}/", username, collection.name_url)
         raise xhttp.HTTPException(xhttp.status.SEE_OTHER, { "location": location })
 
 class Collection(xhttp.Resource):
@@ -99,10 +103,10 @@ class Collection(xhttp.Resource):
         except KeyError as e:
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
-        document = { "url": "/mp3/u/{0}/{1}/".format(username, collection_name),
+        document = { "url": format_url("/u/{0}/{1}/", username, collection_name),
                      "name": collection.name,
-                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, url), 
-                                  "name": name}
+                     "items": [ { "url": format_url("/u/{0}/{1}/{2}/", username, collection_name, url),
+                                  "name": name }
                                 for (name, url) in collection.get_artists() ] }
 
         return { 
@@ -138,14 +142,14 @@ class Artist(xhttp.Resource):
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
         albums = artist.get_albums()
-        covers = { url: "/mp3/u/{0}/{1}/{2}/{3}.jpg?small=true".format(username, collection_name, artist_name, url) 
+        covers = { url: format_url("/u/{0}/{1}/{2}/{3}.jpg?small=true", username, collection_name, artist_name, url)
                         if self.users.resolve(username, collection_name, artist_name, url).get_first_with_cover()
                         else None
                    for (_, url) in albums }
 
-        document = { "url": "/mp3/u/{0}/{1}/{2}/".format(username, collection_name, artist_name),
+        document = { "url": format_url("/u/{0}/{1}/{2}/", username, collection_name, artist_name),
                      "name": artist[0].artist,
-                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, url), 
+                     "items": [ { "url": format_url("/u/{0}/{1}/{2}/{3}/", username, collection_name, artist_name, url),
                                   "name": name,
                                   "cover_url": covers[url] }
                                 for (name, url) in albums ] }
@@ -184,12 +188,12 @@ class Album(xhttp.Resource):
 
         cover_track = album.get_first_with_cover()
 
-        document = { "url": "/mp3/u/{0}/{1}/{2}/{3}/".format(username, collection_name, artist_name, album_name), 
+        document = { "url": format_url("/u/{0}/{1}/{2}/{3}/", username, collection_name, artist_name, album_name),
                      "name": album[0].album,
-                     "download_url": "/mp3/u/{0}/{1}/{2}/{3}.zip".format(username, collection_name, artist_name, album_name),
-                     "cover_image_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg".format(username, collection_name, artist_name, album_name) if cover_track else None,
-                     "cover_thumb_url": "/mp3/u/{0}/{1}/{2}/{3}.jpg?small=true".format(username, collection_name, artist_name, album_name) if cover_track else None,
-                     "items": [ { "url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track.track, track.title_url), 
+                     "download_url": format_url("/u/{0}/{1}/{2}/{3}.zip", username, collection_name, artist_name, album_name),
+                     "cover_image_url": format_url("/u/{0}/{1}/{2}/{3}.jpg", username, collection_name, artist_name, album_name) if cover_track else None,
+                     "cover_thumb_url": format_url("/u/{0}/{1}/{2}/{3}.jpg?small=true", username, collection_name, artist_name, album_name) if cover_track else None,
+                     "items": [ { "url": format_url("/u/{0}/{1}/{2}/{3}/{4}-{5}/", username, collection_name, artist_name, album_name, track.track, track.title_url), 
                                   "name": track.title }
                                 for track in album.items ] }
 
@@ -260,7 +264,7 @@ class TrackInfo(xhttp.Resource):
             raise xhttp.HTTPException(xhttp.status.NOT_FOUND, { "x-detail": e.message })
 
         document = {
-            "url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}/".format(username, collection_name, artist_name, album_name, track_num, track_name),
+            "url": format_url("/u/{0}/{1}/{2}/{3}/{4}-{5}/", username, collection_name, artist_name, album_name, track_num, track_name),
             "name": track.title,
             "artist": track.artist,
             "album": track.album,
@@ -269,8 +273,8 @@ class TrackInfo(xhttp.Resource):
             "year": track.year,
             "bitrate": track.bitrate,
             "length": track.length,
-            "mp3_url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}.mp3".format(username, collection_name, artist_name, album_name, track_num, track_name),
-            "cover_url": "/mp3/u/{0}/{1}/{2}/{3}/{4}-{5}.jpg".format(username, collection_name, artist_name, album_name, track_num, track_name)
+            "mp3_url": format_url("/u/{0}/{1}/{2}/{3}/{4}-{5}.mp3", username, collection_name, artist_name, album_name, track_num, track_name),
+            "cover_url": format_url("/u/{0}/{1}/{2}/{3}/{4}-{5}.jpg", username, collection_name, artist_name, album_name, track_num, track_name)
                          if track.image_type else None
         }
 
@@ -347,21 +351,21 @@ class MP3Server(xhttp.Router):
     def __init__(self):
         self.users = db.Users("run")
         super(MP3Server, self).__init__(
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",   MP3Cover(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",   MP3File(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",      TrackInfo(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",               AlbumZipFile(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?).jpg$",               AlbumCover(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                  Album(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/(.+?)/$",                        Artist(self.users)),
-            (r"^/mp3/u/(.+?)/(.+?)/$",                              Collection(self.users)),
-            (r"^/mp3/u/(.+?)/$",                                    Library(self.users)),
-            (r"^/mp3/u/$",                                          Users(self.users)),
-            (r"^/mp3/(.*\.css)$",                                   xhttp.FileServer("static", "text/css")),
-            (r"^/mp3/(.*\.js)$",                                    xhttp.FileServer("static", "application/javascript")),
-            (r"^/mp3/(.*\.xhtml)$",                                 xhttp.FileServer("static", "application/xhtml+xml")),
-            (r"^/mp3/(.*\.html)$",                                  xhttp.FileServer("static", "text/html")),
-            (r"^/mp3/$",                                            xhttp.Redirector("/mp3/mp3.xhtml"))
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",    MP3Cover(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?)/$",       TrackInfo(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?).zip$",                AlbumZipFile(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?).jpg$",                AlbumCover(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/$",                   Album(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/$",                         Artist(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/(.+?)/$",                               Collection(self.users)),
+            (r"^" + PREFIX + r"/u/(.+?)/$",                                     Library(self.users)),
+            (r"^" + PREFIX + r"/u/$",                                           Users(self.users)),
+            (r"^" + PREFIX + r"/(.*\.css)$",                                    xhttp.FileServer("static", "text/css")),
+            (r"^" + PREFIX + r"/(.*\.js)$",                                     xhttp.FileServer("static", "application/javascript")),
+            (r"^" + PREFIX + r"/(.*\.xhtml)$",                                  xhttp.FileServer("static", "application/xhtml+xml")),
+            (r"^" + PREFIX + r"/(.*\.html)$",                                   xhttp.FileServer("static", "text/html")),
+            (r"^" + PREFIX + r"/$",                                             xhttp.Redirector(PREFIX + "/mp3.xhtml"))
         )
 
     @xhttp.catcher
