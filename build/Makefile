@@ -16,7 +16,7 @@ COVERAGE_OUTPUT_DIR = htmlcov$(TAG)
 export COVERAGE_FILE
 export COVERAGE_OUTPUT_DIR
 
-TARGET = /srv/$(PIP_NAME)
+TARGET ?= /srv/$(PIP_NAME)
 TARGET_USER ?= www-data
 TARGET_GROUP ?= www-data
 
