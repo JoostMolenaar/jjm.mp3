@@ -19,7 +19,7 @@ while read oldrev newrev refname; do
         git rebase $master || exit 1
 
         echo "[post-receive] releasing and deploying"
-        make QUIET= release deploy || exit 1
+        make QUIET= undeploy-code release deploy || exit 1
     else
         echo "Not deploying -- no local branch $refname-config found"
     fi
