@@ -154,7 +154,6 @@ MANIFEST.in: setup.py | $(ENV)
 	$(ENV)/bin/python ./setup.py -q metadata --key=x_static_dirs | sed 's/^/recursive-include / ; s/$$/ *.*/' > MANIFEST.in
 
 release: MANIFEST.in | $(ENV)
-	rm -f $(WHL)/$(PIP_NAME)-$(PIP_VERSION)-*.whl
 	./setup.py $(QUIET) sdist --dist-dir=$(WHL) 
 	$(ENV)/bin/pip wheel --no-index --find-links=$(WHL) --use-wheel --wheel-dir=$(WHL) $(PIP_NAME)==$(PIP_VERSION) $(QUIET)
 

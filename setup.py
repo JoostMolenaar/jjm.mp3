@@ -6,13 +6,14 @@ static_dirs = ['conf', 'web']
 
 import os
 from setuptools import setup
+from setuptools_metadata import get_git_version
 
 setup(
     author='Joost Molenaar',
     author_email='j.j.molenaar@gmail.com',
     url='https://github.com/j0057/mp3',
     name='mp3',
-    version='0.1.0',
+    version=get_git_version('mp3.egg-info/version.txt'),
     packages=['mp3'],
     data_files=[ (root, map(lambda f: root + '/' + f, files))
                  for src_dir in static_dirs
