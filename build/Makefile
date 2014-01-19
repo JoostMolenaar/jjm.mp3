@@ -1,6 +1,8 @@
 
 -include Makefile.in
 
+PIP_VERSION = $(shell ./setup.py --version)
+
 PY_VERSION ?= python2.7
 PY_OPTS ?= -B 
 
@@ -154,7 +156,6 @@ MANIFEST.in: setup.py | $(ENV)
 	$(ENV)/bin/python ./setup.py -q metadata --key=x_static_dirs | sed 's/^/recursive-include / ; s/$$/ *.*/' > MANIFEST.in
 
 release: MANIFEST.in | $(ENV)
-	rm -f $(WHL)/$(PIP_NAME)-$(PIP_VERSION)-*.whl
 	./setup.py $(QUIET) sdist --dist-dir=$(WHL) 
 	$(ENV)/bin/pip wheel --no-index --find-links=$(WHL) --use-wheel --wheel-dir=$(WHL) $(PIP_NAME)==$(PIP_VERSION) $(QUIET)
 
@@ -197,7 +198,6 @@ Makefile.in: setup.py
 	@echo "PKG_BASE = $(shell readlink -f ..)" > Makefile.in
 	@echo "PIP_REQ = requirements.txt" >> Makefile.in
 	@echo "PIP_NAME = $(shell ./setup.py -q metadata -k name)" >> Makefile.in
-	@echo "PIP_VERSION = $(shell ./setup.py -q metadata -k version)" >> Makefile.in
 	@echo "PKG = $(shell ./setup.py -q metadata -k x_repo_names)" >> Makefile.in
 	@echo "STATIC_DIRS = $(shell ./setup.py -q metadata -k x_static_dirs)" >> Makefile.in
 
