@@ -1,6 +1,8 @@
 
 -include Makefile.in
 
+PIP_VERSION = $(shell ./setup.py --version)
+
 PY_VERSION ?= python2.7
 PY_OPTS ?= -B 
 
@@ -196,7 +198,6 @@ Makefile.in: setup.py
 	@echo "PKG_BASE = $(shell readlink -f ..)" > Makefile.in
 	@echo "PIP_REQ = requirements.txt" >> Makefile.in
 	@echo "PIP_NAME = $(shell ./setup.py -q metadata -k name)" >> Makefile.in
-	@echo "PIP_VERSION = $(shell ./setup.py -q metadata -k version)" >> Makefile.in
 	@echo "PKG = $(shell ./setup.py -q metadata -k x_repo_names)" >> Makefile.in
 	@echo "STATIC_DIRS = $(shell ./setup.py -q metadata -k x_static_dirs)" >> Makefile.in
 
