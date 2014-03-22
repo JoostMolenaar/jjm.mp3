@@ -18,6 +18,11 @@ setup(
                  for src_dir in static_dirs
                  for (root, dirs, files) in os.walk(src_dir) ],
     install_requires=dist_names+repo_names,
+    entry_points={
+        'console_scripts': [
+            'scan = mp3.scanner:main'
+        ]
+    },
     custom_metadata={
         'x_repo_names': repo_names,
         'x_dist_names': dist_names,

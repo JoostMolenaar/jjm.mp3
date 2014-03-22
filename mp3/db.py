@@ -297,6 +297,9 @@ class Library(object):
         for collection in self.items:
             collection.update()
 
+    def sort(self):
+        self.items.sort(key=lambda library: library.name)
+
     def get_by_name(self, name):
         for collection in self.items:
             if collection.name == name:
@@ -347,6 +350,11 @@ class Users(object):
             elif obj["_type"] == "RemoteUser":
                 user = RemoteUser.from_obj(obj)
             yield user
+
+    def add_local_user(self, name):
+        user = LocalUser(name, Library())
+        self.items.append(user)
+        return user
 
     def get_by_name(self, name):
         for user in self.items:
@@ -418,3 +426,9 @@ def save_json(fn, obj):
     with open(fn, 'w') as f:
         f.write(obj_to_json(obj))
         f.write('\n')
+
+if __name__ == '__main__' and 0:
+    users = Users('run')
+    users.add('Joost', Library())
+    users.get_by_name('Joost').library.add('/mnt/usb1t/music/Electronic')
+    users.get_by_name('Joost').library.update()
