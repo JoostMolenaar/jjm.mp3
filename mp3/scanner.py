@@ -1,11 +1,14 @@
 import argparse
 import sys
+import os.path
 
 import mp3.db
 
 mp3.db.QUIET = False
 
 def open_db(run, user):
+    if not os.path.isdir(run):
+        os.makedirs(run)
     db = mp3.db.Users(run)
     try:
         db.get_by_name(user)
