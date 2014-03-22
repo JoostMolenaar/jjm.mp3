@@ -2,7 +2,7 @@
 
 repo_names = ['xhttp', 'sh', 'xmlist']
 dist_names = ['pillow', 'mutagen', 'unidecode', 'coverage']
-static_dirs = ['conf', 'run', 'static']
+static_dirs = ['static']
 
 import os
 from setuptools import setup
