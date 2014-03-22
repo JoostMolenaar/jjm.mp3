@@ -289,8 +289,11 @@ class Library(object):
         return Library([ Collection.from_obj(collection) for collection in obj ])
 
     def add(self, path):
+        if any(item.path == path for item in self.items):
+            raise Exception('{0!r} already in library'.format(path))
         collection = Collection.scan(path)
         self.items.append(collection)
+        self.sort()
         return collection
 
     def update(self):
