@@ -429,9 +429,3 @@ def save_json(fn, obj):
     with open(fn, 'w') as f:
         f.write(obj_to_json(obj))
         f.write('\n')
-
-if __name__ == '__main__' and 0:
-    users = Users('run')
-    users.add('Joost', Library())
-    users.get_by_name('Joost').library.add('/mnt/usb1t/music/Electronic')
-    users.get_by_name('Joost').library.update()

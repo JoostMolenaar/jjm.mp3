@@ -41,8 +41,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#    users = Users('run')
-#    users.add('Joost', Library())
-#    users.get_by_name('Joost').library.add('/mnt/usb1t/music/Electronic')
-#    users.get_by_name('Joost').library.update()
