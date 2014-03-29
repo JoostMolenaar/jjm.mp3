@@ -18,16 +18,6 @@ COVERAGE_OUTPUT_DIR = htmlcov$(TAG)
 export COVERAGE_FILE
 export COVERAGE_OUTPUT_DIR
 
-TARGET ?= /srv/$(PIP_NAME)
-TARGET_USER ?= www-data
-TARGET_GROUP ?= www-data
-
-ifeq ($(shell id -n -u),root)
-    SUDO =
-else
-    SUDO = sudo
-endif
-
 QUIET ?= --quiet
 
 .PHONY: run
@@ -65,15 +55,6 @@ lspkg:
 
 $(PIP_REQ): $(ENV) setup.py
 	$(ENV)/bin/python setup.py -q metadata -k x_dist_names > requirements.txt
-
-# deploy
-
-deploy: runtime-live
-	cp -r $(ENV) staging
-	virtualenv --relocatable staging $(QUIET) >/dev/null
-	$(SUDO) chown -R $(TARGET_USER).$(TARGET_GROUP) staging
-	$(SUDO) rm -rf $(TARGET)
-	$(SUDO) mv staging $(TARGET)
 
 # runtime
 
@@ -148,7 +129,7 @@ $(WHL)-ok:
 	rm -rf pkg-env
 	touch $(WHL)-ok
 
-download: $(ENV) $(PIP_REQ)
+download: $(PIP_REQ) | $(ENV)
 	$(ENV)/bin/pip install --no-use-wheel --download $(WHL) --requirement $(PIP_REQ) $(QUIET)
 	$(ENV)/bin/pip wheel --no-index --find-links=$(WHL) --use-wheel --wheel-dir=$(WHL) --requirement $(PIP_REQ) $(QUIET)
 
@@ -171,7 +152,9 @@ clean:
 # unit testing
 #
 
-unit-test: runtime-test
+unit-test: unittest
+
+unittest: runtime-test
 	cd tests ; ../$(ENV)/bin/python $(PY_OPTS) -m unittest discover -v
 
 coverage: runtime-test
