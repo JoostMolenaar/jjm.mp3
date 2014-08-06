@@ -30,6 +30,8 @@ QUIET = True
 
 
 def _clean_url(name, s="-"):
+    if not name:
+        return None
     name = name.lower()
     name = unidecode(name)
     name = name.replace('\'', '')
@@ -49,9 +51,19 @@ class Track(object):
         self.track = track
         self.title = title
 
+        self.artists = artist
+        for phrase in ['vs.', 'vs', 'ft.', 'ft', 'Meets', 'Presents']:
+            self.artists = self.artists.replace(' ' + phrase + ' ', ' & ')
+        self.artists = self.artists.split(' & ')
+
         self.artist_url = _clean_url(self.artist)
+        self.artists_url = map(_clean_url, self.artists)
         self.album_url = _clean_url(self.album)
         self.title_url = _clean_url(self.title)
+
+        if 'genres' in extra_props: self.genres_url = map(_clean_url, extra_props['genres'])
+        if 'label' in extra_props: self.label_url = _clean_url(extra_props['label'])
+        if 'catno' in extra_props: self.catno_url = _clean_url(extra_props['catno'])
 
         self.__dict__.update(extra_props)
 
@@ -60,6 +72,16 @@ class Track(object):
 
     @staticmethod
     def from_file(fn, **extra_props):
+        # TPE1 : artist
+        # TALB : album name
+        # TRCK : track number
+        # TIT2 : track title
+        # TCON : genres
+        # TDRC/TDRL : year
+        # APIC : cover
+        # TPUB : label
+        # TXXX:CATALOGNUMBER : cat.no
+
         t = mutagen.mp3.MP3(os.path.abspath(fn))
 
         artist = t.has_key('TPE1') and t['TPE1'].text[0] or None
@@ -67,19 +89,10 @@ class Track(object):
         track  = t.has_key('TRCK') and t['TRCK'].text[0] or None
         title  = t.has_key('TIT2') and t['TIT2'].text[0] or None
 
-        assert artist is not None, u'No artist'
-        assert album is not None, u'No album'
-        assert track is not None, u'No track'
-        assert title is not None, u'No title'
-
         if not artist: raise Exception('No artist')
         if not album: raise Exception('No album')
         if not track: raise Exception('No track')
         if not title: raise Exception('No title')
-
-        if 0:
-            for phrase in ['vs.', 'vs', 'ft.', 'ft', 'Meets', 'Presents']:
-                artist = artist.replace(' ' + phrase + ' ', ' & ')
 
         track = track.split('/')[0] if '/' in track else track
         track = int(track)
@@ -87,6 +100,11 @@ class Track(object):
 
         mtime = os.stat(fn).st_mtime
         mtime = int(mtime)
+
+        extra_props['genres'] = t.has_key('TCON') and t['TCON'].text or []
+
+        extra_props['label'] = t.has_key('TPUB') and t['TPUB'].text[0] or None
+        extra_props['catno'] = t.has_key('TXXX:CATALOGNUMBER') and t['TXXX:CATALOGNUMBER'].text[0] or None
 
         extra_props['bitrate'] = t.info.bitrate
         extra_props['length'] = t.info.length
@@ -144,7 +162,10 @@ class Track(object):
             'year': self.year,
             'image_type': self.image_type,
             'image_hash': self.image_hash,
-            'image_size': self.image_size
+            'image_size': self.image_size,
+            'genres': self.genres,
+            'label': self.label,
+            'catno': self.catno
         }
 
     @property
@@ -174,6 +195,7 @@ class TrackList(object):
     def __repr__(self):
         return '<TrackList [{0}]>'.format(', '.join(repr(t) for t in self.items))
 
+
     def get_by_artist(self, artist):
         result = (track for track in self.items if track.artist == artist)
         return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
@@ -190,14 +212,44 @@ class TrackList(object):
         result = (track for track in self.items if track.album_url == album_url)
         return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
 
+    def get_by_genre(self, genre):
+        result = (track for track in self.items if genre in track.genres)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_genre_url(self, genre_url):
+        result = (track for track in self.items if genre_url in track.genres_url)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_label(self, label):
+        result = (track for track in self.items if track.label == label)
+        return TrackList(sorted(result, key=lambda t: (t.catno, t.artist, t.album, t.track)))
+
+    def get_by_label_url(self, label_url):
+        result = (track for track in self.items if track.label_url == label_url)
+        return TrackList(sorted(result, key=lambda t: (t.catno, t.artist, t.album, t.track)))
+
+    def get_by_catno(self, catno):
+        result = (track for track in self.items if track.catno == catno)
+        return TrackList(sorted(result, key=lambda t: (t.catno, t.artist, t.album, t.track)))
+
+    def get_by_catno_url(self, catno):
+        result = (track for track in self.items if track.catno_url == catno_url)
+        return TrackList(sorted(result, key=lambda t: (t.catno, t.artist, t.album, t.track)))
+
     def get_by_track_num(self, track_num):
         for track in self.items:
             if track.track == track_num:
                 return track
         raise KeyError(track_num)
 
+
     def get_artists(self):
         return sorted({ (track.artist, track.artist_url) for track in self.items })
+
+    def get_artists_splitted(self):
+        return sorted({ (artist, artist_url)
+                        for track in self.items
+                        for (artist, artist_url) in zip(track.artists, track.artists_url) })
 
     def get_albums(self):
         return sorted({ (track.album, track.album_url) for track in self.items })
@@ -205,8 +257,19 @@ class TrackList(object):
     def get_tracks(self):
         return sorted({ (track.title, track.title_url) for track in self.items })
 
+    def get_genres(self):
+        return sorted({ (genre, genre_url) 
+                        for track in self.items
+                        for (genre, genre_url) in zip(track.genres, track.genres_url) })
+
+    def get_labels(self):
+        return sorted({ (track.label, track.label_url) 
+                        for track in self.items 
+                        if track.label })
+
     def get_mtime(self):
         return max(track.mtime for track in self.items)
+
 
     def get_first_with_cover(self):
         result = (track for track in self.items if track.image_type)
@@ -215,6 +278,14 @@ class TrackList(object):
         except StopIteration:
             return None
 
+    def apply_filter(self, properties):
+        items = self.items
+        for (key, value) in properties:
+            if key in ('artists', 'artists_url', 'genres', 'genres_url'):
+                items = [ track for track in items if value in getattr(track, key) ]
+            else:
+                items = [ track for track in items if getattr(track, key) == value ]
+        return TrackList(items)
 
 class Collection(TrackList):
     def __init__(self, path, files_generator, **extra_props):
@@ -317,6 +388,10 @@ class Library(object):
 
     def get_mtime(self):
         return max(collection.get_mtime() for collection in self.items)
+
+    def all(self):
+        return TrackList(track for collection in self.items
+                               for track in collection.items)
 
 
 class LocalUser(object):
@@ -430,8 +505,26 @@ def save_json(fn, obj):
         f.write(obj_to_json(obj))
         f.write('\n')
 
-if __name__ == '__main__' and 0:
+if __name__ == '__main__' and 1:
+    from pprint import pprint
+
+    QUIET = False
+
     users = Users('run')
-    users.add('Joost', Library())
-    users.get_by_name('Joost').library.add('/mnt/usb1t/music/Electronic')
+
+    if not any(item.name == 'Joost' for item in users.items):
+        users.add_local_user('Joost')
+
+    if not any(item.name == 'Electronic' for item in users.get_by_name('Joost').library.items):
+        users.get_by_name('Joost').library.add('/home/joost/shared/Music/Electronic')
+    if not any(item.name == 'Ambient' for item in users.get_by_name('Joost').library.items):
+        users.get_by_name('Joost').library.add('/home/joost/shared/Music/Ambient')
+
     users.get_by_name('Joost').library.update()
+    users.save()
+
+    tracks = TrackList(track for collection in users.get_by_name('Joost').library.items
+                             for track in collection.items)
+
+    mp3 = mutagen.mp3.MP3('/home/joost/shared/Music/Ambient/Biosphere - Autour De La Lune/Biosphere - Autour De La Lune - 01 - Translation.mp3')
+
