@@ -1,0 +1,70 @@
+/.label
+/.label/touch
+/.label/touch/to:26--biosphere--autour-de-la-lune
+/.label/touch/to:26--biosphere--autour-de-la-lune/01-translation.mp3
+/.label/touch/to:26--biosphere--autour-de-la-lune/02-rotation.mp3
+
+/.genre
+/.genre/ambient
+/.genre/ambient/biosphere--autour-de-la-lune
+/.genre/ambient/biosphere--autour-de-la-lune/01-translation.mp3
+/.genre/ambient/biosphere--autour-de-la-lune/02-rotation.mp3
+
+/.genre/ambient/.artist/biosphere/biosphere--autour-de-la-lune/
+/.genre/ambient/.artist/biosphere/biosphere-higher-intelligence-agency--polar-sequences/
+/.genre/ambient/.artist/higher-intelligence-agency/biosphere-higher-intelligence-agency--polar-sequences/
+
+/.year
+/.year/2004
+/.year/2004/biosphere--autour-de-la-lune
+/.year/2004/biosphere--autour-de-la-lune/01-translation.mp3
+
+/.year/2003-2005/
+
+/.artist
+/.artist/biosphere
+/.artist/biosphere/biosphere-higher-intelligence-agency--polar-sequences
+/.artist/biosphere/biosphere-higher-intelligence-agency--polar-sequences/01-cimerrian-shaft.mp3
+
+/.artist/biosphere/.album/polar-sequences/01-cimerrian-shaft.mp3
+
+--
+
+/.artist        {artist}        {artist}--{album}/{track}-{title}.mp3               .artist .album .genre .year .label      >1
+/.album         {album}         {track}--{title}.mp3                                                                         1
+/.genre         {genre}         {artist}--{album}/{track}-{title}.mp3               .artist .album .genre .year .label      >1
+/.year          {year}          {artist}--{album}                                   .artist .album .genre       .label       1
+/.label         {label}         {catno}--{artist}--{album}/{track}-{title}.mp3      .artist .album .genre .year              1
+/.collection    {collection}    {artist}--{album}/{track}-{title}.mp3               .artist .album .genre .year .label       1
+
+--
+
+/                                                               ArtistAlbumDir
+/.artist                                                        ArtistDir
+/.artist/{artist}                                               ArtistAlbumDir
+/.artist/{artist}/{artist}--{album}                             TracksDir
+/.artist/{artist}/{artist}--{album}/{track}-{title}.mp3         TrackFile
+/.album                                                         AlbumDir
+/.album/{album}                                                 TracksDir
+/.album/{album}/{track}-{title}.mp3                             TrackFile
+/.genre                                                         GenreDir
+/.genre/{genre}                                                 ArtistAlbumDir
+/.genre/{genre}/{artist}--{album}                               TracksDir
+/.genre/{genre}/{artist}--{album}/{track}-{title}.mp3           TrackFile
+/.year                                                          YearDir
+/.year/{year}                                                   ArtistAlbumDir
+/.year/{year}/{artist}--{album}                                 TracksDir
+/.year/{year}/{artist}--{album}/{track}-{title}.mp3             TrackFile
+/.label                                                         LabelDir
+/.label/{label}                                                 CatNoArtistAlbumDir
+/.label/{label}/{catno}--{artist}--{album}                      TracksDir
+/.label/{label}/{catno}--{artist}--{album}/{track}-{title}.mp3  TrackFile
+/.collection                                                    CollectionDir
+/.collection/{collection}                                       ArtistAlbumDir
+/.collection/{collection}/{artist}--{album}                     TracksDir
+/.collection/{collection}/{artist}--{album}/{track}-{title}.mp3 TrackFile
+/{artist}--{album}                                              TracksDir
+/{artist}--{album}/{track}-{title}.mp3                          TrackFile
+
+--
+

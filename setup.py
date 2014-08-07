@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 repo_names = ['xhttp', 'sh', 'xmlist']
-dist_names = ['pillow', 'mutagen', 'unidecode', 'coverage']
+dist_names = ['pillow', 'mutagen', 'unidecode', 'fusepy', 'coverage']
 static_dirs = ['static']
 
 import os

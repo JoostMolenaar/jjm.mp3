@@ -204,6 +204,14 @@ class TrackList(object):
         result = (track for track in self.items if track.artist_url == artist_url)
         return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
 
+    def get_by_splitted_artist(self, artist):
+        result = (track for track in self.items if artist in track.artists)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_splitted_artist_url(self, artist_url):
+        result = (track for track in self.items if artist_url in track.artists_url)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
     def get_by_album(self, album):
         result = (track for track in self.items if track.album == album)
         return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
@@ -254,6 +262,10 @@ class TrackList(object):
     def get_albums(self):
         return sorted({ (track.album, track.album_url) for track in self.items })
 
+    def get_artist_albums(self):
+        return sorted({ (track.artist, track.artist_url, track.album, track.album_url)
+                        for track in self.items })
+
     def get_tracks(self):
         return sorted({ (track.title, track.title_url) for track in self.items })
 
@@ -266,6 +278,12 @@ class TrackList(object):
         return sorted({ (track.label, track.label_url) 
                         for track in self.items 
                         if track.label })
+
+    def get_years(self):
+        return sorted({ track.year for track in self.items if track.year is not None })
+
+    def get_collections(self):
+        return sorted({ (track.library, track.library_url) for track in self.items })
 
     def get_mtime(self):
         return max(track.mtime for track in self.items)
@@ -515,10 +533,9 @@ if __name__ == '__main__' and 1:
     if not any(item.name == 'Joost' for item in users.items):
         users.add_local_user('Joost')
 
-    if not any(item.name == 'Electronic' for item in users.get_by_name('Joost').library.items):
-        users.get_by_name('Joost').library.add('/home/joost/shared/Music/Electronic')
-    if not any(item.name == 'Ambient' for item in users.get_by_name('Joost').library.items):
-        users.get_by_name('Joost').library.add('/home/joost/shared/Music/Ambient')
+    for name in ['Ambient','Classic','Dub & Reggae','Dubstep','Electronic','Exotic','Hip-Hop','Metal & Punk & Surf','Trip-Hop & Turntables','Weird & Pop']:
+        if not any(item.name == name for item in users.get_by_name('Joost').library.items):
+            users.get_by_name('Joost').library.add('/home/joost/shared/Music/{0}'.format(name))
 
     users.get_by_name('Joost').library.update()
     users.save()
