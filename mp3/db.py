@@ -244,6 +244,14 @@ class TrackList(object):
         result = (track for track in self.items if track.catno_url == catno_url)
         return TrackList(sorted(result, key=lambda t: (t.catno, t.artist, t.album, t.track)))
 
+    def get_by_collection(self, collection):
+        result = (track for track in self.items if track.library == collection) # TODO : rename Track.library to collection
+        return TrackList(sorted(result, key=lambda t: t.library))
+
+    def get_by_collection_url(self, collection_url):
+        result = (track for track in self.items if track.library_url == collection_url)
+        return TrackList(sorted(result, key=lambda t: t.library_url))
+
     def get_by_track_num(self, track_num):
         for track in self.items:
             if track.track == track_num:

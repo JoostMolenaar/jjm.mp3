@@ -57,6 +57,14 @@ class TracksDir(Directory):
         for track in self.tracks.items:
             yield '{0}-{1}.mp3'.format(track.track, track.title_url)
 
+class Mp3File(object):
+    'mp3 file'
+    def __init__(self, track):
+        self.track = track
+
+    def getattr(self):
+        return { 'st_mode': stat.S_IFREG | 0444 }
+
 class ArtistDir(Directory):
     'dir with {artist} subdirs'
     def readdir(self):
@@ -111,7 +119,7 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
         self.tracks = tracks
         self.fd = 0
 
-    def _parse_path(self, tracks, parts, default=ArtistAlbumDir):
+    def _parse_path(self, tracks, parts, default):
         print '## _parse_path', parts, default.__name__
         if not parts:
             return default(tracks)
@@ -137,11 +145,11 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
             if first == '.collection':
                 return CollectionDir(tracks)
 
-.           if default == ArtistAlbumDir:
+            if default == ArtistAlbumDir:
                 tracks = self.tracks.apply_filter(zip(['artist_url', 'album_url'], first.split('--')))
                 return TracksDir(tracks)
 
-.           if default == CatNoArtistAlbumDir:
+            if default == CatNoArtistAlbumDir:
                 tracks = self.tracks.apply_filter(zip(['catno_url', 'artist_url', 'album_url'], first.split('--')))
                 return TracksDir(tracks)
 
@@ -150,22 +158,30 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
             second = parts[1]
 
             if first == '.artist': 
-                return self._parse_path(tracks.get_by_splitted_artist_url(second), parts[2:], default)
+                return self._parse_path(tracks.get_by_splitted_artist_url(second), parts[2:], ArtistAlbumDir)
 
             if first == '.album': 
-                return self._parse_path(tracks.get_by_album_url(second), parts[2:], default)
+                return self._parse_path(tracks.get_by_album_url(second), parts[2:], TracksDir)
 
             if first == '.genre': 
-                return self._parse_path(tracks.get_by_genre_url(second), parts[2:], default)
+                return self._parse_path(tracks.get_by_genre_url(second), parts[2:], ArtistAlbumDir)
 
             if first == '.year': 
-                return self._parse_path(tracks.get_by_year(second), parts[2:], default)
+                return self._parse_path(tracks.get_by_year(second), parts[2:], ArtistAlbumDir)
 
             if first == '.label': 
-                return self._parse_path(tracks.get_by_label_url(second), parts[2:], default=CatNoArtistAlbumDir)
+                return self._parse_path(tracks.get_by_label_url(second), parts[2:], CatNoArtistAlbumDir)
 
             if first == '.collection': 
-                return self._parse_path(tracks.get_by_collection_url(second), parts[2:], default)
+                return self._parse_path(tracks.get_by_collection_url(second), parts[2:], ArtistAlbumDir)
+
+            if default == ArtistAlbumDir:
+                track = self.tracks.apply_filter(zip(['artist_url', 'album_url'], first.split('--'))).items[0]
+                return Mp3File(track)
+
+            if default == CatNoArtistAlbumDir:
+                track = self.tracks.apply_filter(zip(['catno_url', 'artist_url', 'album_url'], first.split('--'))).items[0]
+                return Mp3File(track)
 
         print '## _parse_path not found:', parts, default.__name__
 
@@ -173,12 +189,12 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
 
     def getattr(self, path, fh=None):
         parts = [ part for part in path[1:].split('/') if part ]
-        view = self._parse_path(self.tracks, parts)
+        view = self._parse_path(self.tracks, parts, ArtistAlbumDir)
         return view.getattr()
 
     def readdir(self, path, fh):
         parts = [ part for part in path[1:].split('/') if part ]
-        view = self._parse_path(self.tracks, parts)
+        view = self._parse_path(self.tracks, parts, ArtistAlbumDir)
         return view.readdir()
 
 if __name__ == '__main__':
