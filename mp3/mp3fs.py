@@ -8,20 +8,14 @@ import fuse
 
 class TrackListView(object):
     def __init__(self, tracks):
-        print '## {0}.__init__ {1}'.format(type(self).__name__, len(tracks.items))
         self.tracks = tracks
         
-class Directory(TrackListView):
-    def getattr(self):
-        print '## {0}.getattr'.format(type(self).__name__,)
+class ArtistAlbumDir(TrackListView):
+    'dir with filter subdirs and {artist}--{album} subdirs'
+
+    def getattr(self, filename):
         return { 'st_mode': stat.S_IFDIR | 0755 }
 
-    def readdir(self):
-        yield '.'
-        yield '..'
-
-class ArtistAlbumDir(Directory):
-    'dir with filter subdirs and {artist}--{album} subdirs'
     def readdir(self):
         yield '.'
         yield '..'
@@ -34,8 +28,12 @@ class ArtistAlbumDir(Directory):
         for (artist_url, album_url) in sorted({ (artist_url, album_url) for (_, artist_url, _, album_url) in self.tracks.get_artist_albums() }):
             yield '{0}--{1}'.format(artist_url, album_url)
 
-class CatNoArtistAlbumDir(Directory):
+class CatNoArtistAlbumDir(TrackListView):
     'dir with filter subdirs and {catno}--{artist}--{album} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
@@ -49,8 +47,12 @@ class CatNoArtistAlbumDir(Directory):
                                                            for track in self.tracks.items }):
             yield '{0}--{1}--{2}'.format(catno_url, artist_url, album_url)
 
-class TracksDir(Directory):
+class TracksDir(TrackListView):
     'dir with {track}-{title}.mp3 files'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFREG | 0644 }
+
     def readdir(self):
         yield '.'
         yield '..'
@@ -59,54 +61,76 @@ class TracksDir(Directory):
 
 class Mp3File(object):
     'mp3 file'
+
     def __init__(self, track):
         self.track = track
 
-    def getattr(self):
-        return { 'st_mode': stat.S_IFREG | 0444 }
-
-class ArtistDir(Directory):
+class ArtistDir(TrackListView):
     'dir with {artist} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
         for artist_url in sorted({ artist_url for (_, artist_url) in self.tracks.get_artists_splitted() }):
             yield artist_url
 
-class AlbumDir(Directory):
+class AlbumDir(TrackListView):
     'dir with {album} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
         for album_url in sorted({ album_url for (_, album_url) in self.tracks.get_albums() }):
             yield album_url
 
-class GenreDir(Directory):
+class GenreDir(TrackListView):
     'dir with {genre} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
         for genre_url in sorted({ genre_url for (_, genre_url) in self.tracks.get_genres() }):
             yield genre_url
 
-class YearDir(Directory):
+class YearDir(TrackListView):
     'dir with {year} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
         for year in self.tracks.get_years():
             yield str(year)
 
-class LabelDir(Directory):
+class LabelDir(TrackListView):
     'dir with {label} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
         for label_url in sorted({ label_url for (_, label_url) in self.tracks.get_labels() }):
             yield label_url
 
-class CollectionDir(Directory):
+class CollectionDir(TrackListView):
     'dir with {collection} subdirs'
+
+    def getattr(self, filename):
+        return { 'st_mode': stat.S_IFDIR | 0755 }
+
     def readdir(self):
         yield '.'
         yield '..'
@@ -167,7 +191,7 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
                 return self._parse_path(tracks.get_by_genre_url(second), parts[2:], ArtistAlbumDir)
 
             if first == '.year': 
-                return self._parse_path(tracks.get_by_year(second), parts[2:], ArtistAlbumDir)
+                return self._parse_path(tracks.get_by_year(int(second)), parts[2:], ArtistAlbumDir)
 
             if first == '.label': 
                 return self._parse_path(tracks.get_by_label_url(second), parts[2:], CatNoArtistAlbumDir)
@@ -176,11 +200,13 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
                 return self._parse_path(tracks.get_by_collection_url(second), parts[2:], ArtistAlbumDir)
 
             if default == ArtistAlbumDir:
-                track = self.tracks.apply_filter(zip(['artist_url', 'album_url'], first.split('--'))).items[0]
+                filters = zip(['artist_url', 'album_url'], first.split('--'))
+                track = self.tracks.apply_filter(filters).items[0]
                 return Mp3File(track)
 
             if default == CatNoArtistAlbumDir:
-                track = self.tracks.apply_filter(zip(['catno_url', 'artist_url', 'album_url'], first.split('--'))).items[0]
+                filters = zip(['catno_url', 'artist_url', 'album_url'], first.split('--'))
+                track = self.tracks.apply_filter(filters).items[0]
                 return Mp3File(track)
 
         print '## _parse_path not found:', parts, default.__name__
@@ -189,8 +215,8 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
 
     def getattr(self, path, fh=None):
         parts = [ part for part in path[1:].split('/') if part ]
-        view = self._parse_path(self.tracks, parts, ArtistAlbumDir)
-        return view.getattr()
+        view = self._parse_path(self.tracks, parts[:-1], ArtistAlbumDir)
+        return view.getattr(parts[-1] if parts else '/')
 
     def readdir(self, path, fh):
         parts = [ part for part in path[1:].split('/') if part ]

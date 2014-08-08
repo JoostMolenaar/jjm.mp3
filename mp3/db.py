@@ -252,6 +252,14 @@ class TrackList(object):
         result = (track for track in self.items if track.library_url == collection_url)
         return TrackList(sorted(result, key=lambda t: t.library_url))
 
+    def get_by_year(self, year):
+        result = (track for track in self.items if track.year == year)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
+    def get_by_year_range(self, year_from, year_to):
+        result = (track for track in self.items if year_from <= track.year <= year_to)
+        return TrackList(sorted(result, key=lambda t: (t.artist, t.album, t.track)))
+
     def get_by_track_num(self, track_num):
         for track in self.items:
             if track.track == track_num:
