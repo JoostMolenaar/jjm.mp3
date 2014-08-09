@@ -25,7 +25,9 @@ class ArtistAlbumDir(TrackListView):
         yield '.year'
         yield '.label'
         yield '.collection'
-        for (artist_url, album_url) in sorted({ (artist_url, album_url) for (_, artist_url, _, album_url) in self.tracks.get_artist_albums() }):
+        names = sorted({ (artist_url, album_url) 
+                         for (_, artist_url, _, album_url) in self.tracks.get_artist_albums() })
+        for (artist_url, album_url) in names:
             yield '{0}--{1}'.format(artist_url, album_url)
 
 class CatNoArtistAlbumDir(TrackListView):
@@ -43,8 +45,9 @@ class CatNoArtistAlbumDir(TrackListView):
         yield '.year'
         yield '.label'
         yield '.collection'
-        for (catno_url, artist_url, album_url) in sorted({ (track.catno_url, track.artist_url, track.album_url)
-                                                           for track in self.tracks.items }):
+        names = sorted({ (track.catno_url, track.artist_url, track.album_url)
+                         for track in self.tracks.items })
+        for (catno_url, artist_url, album_url) in names:
             yield '{0}--{1}--{2}'.format(catno_url, artist_url, album_url)
 
 class TracksDir(TrackListView):
@@ -170,11 +173,13 @@ class Mp3FS(fuse.LoggingMixIn, fuse.Operations):
                 return CollectionDir(tracks)
 
             if default == ArtistAlbumDir:
-                tracks = self.tracks.apply_filter(zip(['artist_url', 'album_url'], first.split('--')))
+                filters = zip(['artist_url', 'album_url'], first.split('--'))
+                tracks = self.tracks.apply_filter(filters)
                 return TracksDir(tracks)
 
             if default == CatNoArtistAlbumDir:
-                tracks = self.tracks.apply_filter(zip(['catno_url', 'artist_url', 'album_url'], first.split('--')))
+                filters = zip(['catno_url', 'artist_url', 'album_url'], first.split('--'))
+                tracks = self.tracks.apply_filter(filters)
                 return TracksDir(tracks)
 
         elif len(parts) >= 2:
