@@ -1,6 +1,7 @@
 import errno
 import logging
 import os
+import re
 import stat
 import time
 
@@ -14,6 +15,14 @@ class ArtistAlbumDir(TrackListView):
     'dir with filter subdirs and {artist}--{album} subdirs'
 
     def getattr(self, filename):
+        match = re.match(r'^(.+)--(.+)$', filename)
+        if not match and filename not in ['.album','.artist','.collection','.genre','.label','.year']:
+            raise fuse.FuseOSError(errno.ENOENT)
+        if match:
+            filters = zip(['artist_url', 'album_url'], match.groups())
+            tracks = self.tracks.apply_filter(filters)
+            if not tracks.items:
+                raise fuse.FuseOSError(errno.ENOENT)
         return { 'st_mode': stat.S_IFDIR | 0755 }
 
     def readdir(self):
@@ -54,7 +63,26 @@ class TracksDir(TrackListView):
     'dir with {track}-{title}.mp3 files'
 
     def getattr(self, filename):
-        return { 'st_mode': stat.S_IFREG | 0644 }
+        match = re.match(r'^(\d+)-(.+)\.mp3$', filename)
+        if not match:
+            raise fuse.FuseOSError(errno.ENOENT)
+
+        track_num, title = match.groups()
+
+        try:
+            track = self.tracks.get_by_track_num(track_num)
+        except KeyError:
+            raise fuse.FuseOSError(errno.ENOENT)
+
+        if track.title_url != title:
+            raise fuse.FuseOSError(errno.ENOENT)
+        
+        s = os.stat(track.fn)
+        return { 'st_mode': stat.S_IFREG | 0644,
+                 'st_size': s.st_size,
+                 'st_mtime': s.st_mtime,
+                 'st_uid': s.st_uid,
+                 'st_gid': s.st_gid }
 
     def readdir(self):
         yield '.'
@@ -67,6 +95,9 @@ class Mp3File(object):
 
     def __init__(self, track):
         self.track = track
+
+    #def getattr(self, filename):
+    #    return { 'st_mode': 
 
 class ArtistDir(TrackListView):
     'dir with {artist} subdirs'
