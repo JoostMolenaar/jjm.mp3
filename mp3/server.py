@@ -12,6 +12,7 @@ from . import db
 XHTML = "http://www.w3.org/1999/xhtml"
 
 PREFIX = os.environ.get("MP3_PREFIX", "/mp3")
+RUNDIR = os.environ.get("MP3_STATE", "run")
 
 format_url = lambda s, *a: PREFIX + s.format(*a)
 
@@ -353,7 +354,7 @@ class MP3Cover(xhttp.Resource):
    
 class MP3Server(xhttp.Router):
     def __init__(self):
-        self.users = db.Users("run")
+        self.users = db.Users(RUNDIR)
         super(MP3Server, self).__init__(
             (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",    MP3Cover(self.users)),
             (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
