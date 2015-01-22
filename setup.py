@@ -7,13 +7,20 @@ static_dirs = ['static']
 import os
 from setuptools import setup
 
+try:
+    with open('mp3.egg-info/version.txt', 'r') as f:
+        version = f.read()
+except:
+    version = None
+
 setup(
+    name='mp3',
+    version=version,
+    version_command=('git describe', None),
+    packages=['mp3'],
     author='Joost Molenaar',
     author_email='j.j.molenaar@gmail.com',
     url='https://github.com/j0057/mp3',
-    name='mp3',
-    version_command=('git describe', None),
-    packages=['mp3'],
     data_files=[ (root, map(lambda f: root + '/' + f, files))
                  for src_dir in static_dirs
                  for (root, dirs, files) in os.walk(src_dir) ],
