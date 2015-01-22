@@ -1,4 +1,4 @@
-import unittest 
+import unittest
 import os.path
 
 import mp3.db
@@ -19,7 +19,10 @@ EXPECTED_OBJ = lambda: {
     "image_type":   u"image/jpeg",
     "image_size":   21992,
     "image_hash":   "dedad50a19cd1f56bac1d6a31d0500f4fb4738db",
-    "mtime":        int(os.path.getmtime(FILENAME))
+    "mtime":        int(os.path.getmtime(FILENAME)),
+    "catno":        None,
+    "label":        None,
+    "genres":       []
 }
 
 class TestTrack(unittest.TestCase):

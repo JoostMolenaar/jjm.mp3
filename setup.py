@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 repo_names = ['xhttp', 'sh', 'xmlist']
-dist_names = ['pillow', 'mutagen', 'unidecode', 'fusepy', 'coverage']
+dist_names = ['pillow', 'mutagen', 'unidecode', 'fusepy']
 static_dirs = ['static']
 
 import os
@@ -12,7 +12,7 @@ setup(
     author_email='j.j.molenaar@gmail.com',
     url='https://github.com/j0057/mp3',
     name='mp3',
-    version_command='git describe',
+    version_command=('git describe', None),
     packages=['mp3'],
     data_files=[ (root, map(lambda f: root + '/' + f, files))
                  for src_dir in static_dirs
