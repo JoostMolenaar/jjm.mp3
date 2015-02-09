@@ -355,6 +355,19 @@ class MP3Cover(xhttp.Resource):
 class MP3Server(xhttp.Router):
     def __init__(self):
         self.users = db.Users(RUNDIR)
+        #super(type(self), self).__init__(
+        #    (MP3Cover, '/u/:user/:coll/:artist/:album/:track-:title.jpg'),
+        #    ...,
+        #    formats={'user': '[a-z0-9-]+',
+        #             'coll': '[a-z0-9-]+',
+        #             ...},
+        #    prefix='/mp3-dev')
+        #
+        # 1. convert to regex for routing
+        #    exactly same tegex as below (anchors, prefix, captures)
+        #
+        # 2. convert to format strings for generating urls
+        #    format_url(type, **args)
         super(MP3Server, self).__init__(
             (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).jpg$",    MP3Cover(self.users)),
             (r"^" + PREFIX + r"/u/(.+?)/(.+?)/(.+?)/(.+?)/(\d+)-(.+?).mp3$",    MP3File(self.users)),
