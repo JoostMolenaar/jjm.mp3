@@ -16,7 +16,7 @@ except:
 setup(
     name='mp3',
     version=version,
-    version_command=('git describe', None),
+    version_command=('git describe', 'pep440-git'),
     packages=['mp3'],
     author='Joost Molenaar',
     author_email='j.j.molenaar@gmail.com',
